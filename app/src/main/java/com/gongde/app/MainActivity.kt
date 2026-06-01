@@ -187,11 +187,11 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
             modifier = Modifier.fillMaxSize().padding(top = 80.dp)
         )
 
-        // 主内容区域（不含底部导航）
+        // 主内容区域（底部留足够空间给导航栏）
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 56.dp) // 为底部导航栏留空间
+                .padding(bottom = 80.dp)
         ) {
             when (currentTab) {
                 NavTab.HOME -> HomeContent(
