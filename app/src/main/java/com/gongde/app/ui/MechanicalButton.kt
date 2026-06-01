@@ -59,22 +59,20 @@ fun MechanicalButton(
             .graphicsLayer(scaleX = scale.value, scaleY = scale.value)
             .pointerInput(Unit) {
                 detectTapGestures {
-                    // 播放音效（ASMR 模式使用增强音效）
-                    if (asmrMode) {
-                        soundEngine?.playAsmrClick()
-                    } else {
-                        soundEngine?.playClick(switchType)
-                    }
-                    // 触觉反馈（受设置控制）
-                    if (hapticEnabled) hapticEngine?.tick()
+                    try {
+                        if (asmrMode) {
+                            soundEngine?.playAsmrClick()
+                        } else {
+                            soundEngine?.playClick(switchType)
+                        }
+                        if (hapticEnabled) hapticEngine?.tick()
+                    } catch (_: Exception) { }
 
-                    // 按压下 + 弹起动画
                     scope.launch {
-                        onPressed()
+                        try { onPressed() } catch (_: Exception) { }
                         pressAnim.animateTo(1f, tween(100, easing = FastOutSlowInEasing))
                         pressAnim.animateTo(0f, tween(220, easing = FastOutSlowInEasing))
                     }
-                    // 缩放脉冲
                     scope.launch {
                         scale.animateTo(1.04f, tween(80, easing = FastOutSlowInEasing))
                         scale.animateTo(1f, tween(220, easing = FastOutSlowInEasing))
@@ -87,7 +85,7 @@ fun MechanicalButton(
         Image(
             painter = painterOff,
             contentDescription = null,
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
@@ -97,7 +95,7 @@ fun MechanicalButton(
         Image(
             painter = painterMid,
             contentDescription = null,
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
@@ -110,7 +108,7 @@ fun MechanicalButton(
         Image(
             painter = painterOn,
             contentDescription = null,
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)

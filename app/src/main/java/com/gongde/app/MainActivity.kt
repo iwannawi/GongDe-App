@@ -120,17 +120,18 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
 
     // 功德增加回调（统一处理：计数 + 历史 + 成就检查 + 提示）
     val onMeritGain: () -> Unit = {
-        val (newTotal, newToday) = store.increment()
-        totalCount = newTotal
-        todayCount = newToday
-        triggerCount++
-        historyStore.recordMerit(java.time.LocalDate.now().toString(), 1)
-        achievementStore.updateStreak()
-        val unlocked = achievementStore.checkAndUnlock(newTotal, newToday)
-        // 成就解锁提示
-        for (achievement in unlocked) {
-            Toast.makeText(context, "🏆 成就解锁：${achievement.name}", Toast.LENGTH_SHORT).show()
-        }
+        try {
+            val (newTotal, newToday) = store.increment()
+            totalCount = newTotal
+            todayCount = newToday
+            triggerCount++
+            historyStore.recordMerit(java.time.LocalDate.now().toString(), 1)
+            achievementStore.updateStreak()
+            val unlocked = achievementStore.checkAndUnlock(newTotal, newToday)
+            for (achievement in unlocked) {
+                Toast.makeText(context, "🏆 成就解锁：${achievement.name}", Toast.LENGTH_SHORT).show()
+            }
+        } catch (_: Exception) { }
     }
 
     // 获取当前主题的背景渐变色
@@ -192,6 +193,8 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
                         store.reset(); totalCount = 0; todayCount = 0; showResetDialog = false
                     },
                     onShowReset = { showResetDialog = true },
+                    onShowMeditation = { showMeditation = true },
+                    onShowAsmr = { showAsmr = true },
                     soundEngine = soundEngine,
                     hapticEngine = hapticEngine,
                     hapticEnabled = hapticEnabled,
@@ -248,6 +251,8 @@ private fun HomeContent(
     onDismissReset: () -> Unit,
     onConfirmReset: () -> Unit,
     onShowReset: () -> Unit,
+    onShowMeditation: () -> Unit,
+    onShowAsmr: () -> Unit,
     soundEngine: SoundEngine,
     hapticEngine: HapticEngine,
     hapticEnabled: Boolean,
@@ -281,17 +286,14 @@ private fun HomeContent(
         // 功德计数面板
         MeritCounter(totalCount = totalCount, todayCount = todayCount)
 
-        // 清零按钮
-        Box(
-            modifier = Modifier
-                .width(80.dp)
-                .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(20.dp))
-                .background(Color(0x08FFFFFF), RoundedCornerShape(20.dp))
-                .clickable(onClick = onShowReset)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center
+        // 底部操作栏：清零 + 冥想 + ASMR
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("空", color = Color(0x40B0BEC5), fontSize = 11.sp)
+            HomeButton("🧘 冥想") { onShowMeditation() }
+            HomeButton("清零") { onShowReset() }
+            HomeButton("🎧 ASMR") { onShowAsmr() }
         }
     }
 
@@ -359,6 +361,21 @@ private fun BottomNavBar(
                 }
             }
         }
+    }
+}
+
+/** 主页小按钮（冥想/清零/ASMR） */
+@Composable
+private fun HomeButton(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(20.dp))
+            .background(Color(0x08FFFFFF), RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = Color(0x40B0BEC5), fontSize = 12.sp)
     }
 }
 

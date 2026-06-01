@@ -5,26 +5,36 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Transparent switch housing (clear blue-ish) -->
+    <!-- 键帽底座（白色半透明，模拟轴体） -->
     <path
-        android:fillColor="#40BBDEFB"
-        android:pathData="M28,58 L52,58 Q56,58 56,62 L56,72 Q56,76 52,76 L28,76 Q24,76 24,72 L24,62 Q24,58 28,58 Z" />
+        android:fillColor="#33FFFFFF"
+        android:pathData="M30,62 L78,62 Q82,62 82,66 L82,76 Q82,80 78,80 L30,80 Q26,80 26,76 L26,66 Q26,62 30,62 Z" />
     <path
-        android:fillColor="#55BBDEFB"
-        android:pathData="M28,58 L52,58 Q56,58 56,62 L56,72 Q56,76 52,76 L28,76 Q24,76 24,72 L24,62 Q24,58 28,58 Z"
-        android:strokeColor="#88FFFFFF"
-        android:strokeWidth="1" />
+        android:strokeColor="#22FFFFFF"
+        android:strokeWidth="0.8"
+        android:pathData="M30,62 L78,62 Q82,62 82,66 L82,76 Q82,80 78,80 L30,80 Q26,80 26,76 L26,66 Q26,62 30,62 Z" />
 
-    <!-- Red trapezoid keycap: narrower top, wider bottom -->
+    <!-- 红色键帽主体（梯形，上窄下宽） -->
     <path
         android:fillColor="#E53935"
-        android:pathData="M30,12 L50,12 L56,52 L24,52 Z" />
-    <path
-        android:fillColor="#D32F2F"
-        android:pathData="M50,12 L56,52 L54,52 L48,12 Z" />
+        android:pathData="M34,18 L74,18 L82,58 L26,58 Z" />
 
-    <!-- White teardrop / water-drop symbol -->
+    <!-- 键帽右侧面（暗红色，增加立体感） -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M40,20 C40,20 46,22 46,26 C46,29 44,32 40,34 C36,32 34,29 34,26 C34,22 40,20 40,20 Z" />
+        android:fillColor="#C62828"
+        android:pathData="M74,18 L82,58 L78,58 L70,18 Z" />
+
+    <!-- 键帽顶面高光 -->
+    <path
+        android:fillColor="#EF5350"
+        android:pathData="M34,18 L74,18 L72,24 L36,24 Z" />
+
+    <!-- 金色"功"字（简洁设计） -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M46,28 L46,50 M46,28 L60,28 L60,36 L46,36 M52,36 L60,36 L60,50 L46,50"
+        android:strokeColor="#FFD54F"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>

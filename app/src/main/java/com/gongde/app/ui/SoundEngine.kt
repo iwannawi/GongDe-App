@@ -71,21 +71,21 @@ class SoundEngine {
 
     // ---------- 各轴体预分配的 AudioTrack (MODE_STATIC) ----------
 
-    private val blueTrack: AudioTrack = buildStaticTrack(SwitchType.BLUE)
-    private val redTrack: AudioTrack = buildStaticTrack(SwitchType.RED)
-    private val brownTrack: AudioTrack = buildStaticTrack(SwitchType.BROWN)
+    private val blueTrack: AudioTrack? = try { buildStaticTrack(SwitchType.BLUE) } catch (_: Exception) { null }
+    private val redTrack: AudioTrack? = try { buildStaticTrack(SwitchType.RED) } catch (_: Exception) { null }
+    private val brownTrack: AudioTrack? = try { buildStaticTrack(SwitchType.BROWN) } catch (_: Exception) { null }
 
     /** 轴体 → 对应预分配的 AudioTrack */
     private val trackMap: Map<SwitchType, AudioTrack> = mapOf(
         SwitchType.BLUE to blueTrack,
         SwitchType.RED to redTrack,
         SwitchType.BROWN to brownTrack
-    )
+    ).filterValues { it != null }.mapValues { it.value!! }
 
     // ---------- ASMR 模式 ----------
 
-    /** ASMR 增强音频 —— 包含延迟复制 + 低频隆隆声 + 高频空气感 */
-    private val asmrTrack: AudioTrack = buildAsmrTrack()
+    /** ASMR 增强音频 */
+    private val asmrTrack: AudioTrack? = try { buildAsmrTrack() } catch (_: Exception) { null }
 
     // ---------- 雨声 (MODE_STREAM 循环播放) ----------
 
@@ -118,9 +118,10 @@ class SoundEngine {
      * 播放 ASMR 增强版点击音（含多层延迟混响 + 低频 + 高频空气感）
      */
     fun playAsmrClick() {
-        try { asmrTrack.stop() } catch (_: IllegalStateException) { }
-        asmrTrack.reloadStaticData()
-        asmrTrack.play()
+        val track = asmrTrack ?: return
+        try { track.stop() } catch (_: IllegalStateException) { }
+        track.reloadStaticData()
+        track.play()
     }
 
     /**
@@ -197,15 +198,13 @@ class SoundEngine {
     fun release() {
         stopRain()
         trackMap.values.forEach { track ->
-            try {
-                track.stop()
-            } catch (_: IllegalStateException) { }
+            try { track.stop() } catch (_: IllegalStateException) { }
             track.release()
         }
-        try {
-            asmrTrack.stop()
-        } catch (_: IllegalStateException) { }
-        asmrTrack.release()
+        asmrTrack?.let {
+            try { it.stop() } catch (_: IllegalStateException) { }
+            it.release()
+        }
     }
 
     // =====================================================================
