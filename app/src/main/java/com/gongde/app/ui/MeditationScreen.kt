@@ -227,8 +227,12 @@ private fun IdleContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // "返回" 文本按钮
-            TextButton(onClick = onBack) {
-                Text("返回", color = MutedGrayColor, fontSize = 14.sp)
+            // "返回" 按钮（增大触摸区域）
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("← 返回", color = MutedGrayColor, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -378,8 +382,12 @@ private fun RunningContent(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onBack) {
-                Text("返回", color = MutedGrayColor, fontSize = 14.sp)
+            // "返回" 按钮（增大触摸区域）
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("← 返回", color = MutedGrayColor, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }

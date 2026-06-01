@@ -89,7 +89,7 @@ private fun StatBadge(label: String, value: Int, color: Color) {
 @Composable
 private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
     val borderColor = if (unlocked) GoldColor else LockedGray
-    val descriptionText = if (unlocked) achievement.description else "???"
+    val descriptionText = achievement.description  // 始终显示描述
     val nameAlpha = if (unlocked) 1f else 0.5f
     val iconAlpha = if (unlocked) 1f else 0.35f
 

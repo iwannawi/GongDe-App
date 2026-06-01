@@ -61,31 +61,27 @@ class SoundEngine {
         private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
     }
 
-    // ---------- 共用 AudioAttributes ----------
-
-    /** 游戏类音频属性 —— 低延迟按键反馈 */
     private val gameAttributes: AudioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_GAME)
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
 
-    // ---------- 各轴体预分配的 AudioTrack (MODE_STATIC) ----------
+    // 懒加载：首次使用时才创建 AudioTrack，避免启动时阻塞主线程
+    private val tracks = mutableMapOf<SwitchType, AudioTrack>()
+    private fun getTrack(type: SwitchType): AudioTrack? {
+        tracks[type]?.let { return it }
+        return try {
+            buildStaticTrack(type).also { tracks[type] = it }
+        } catch (_: Exception) { null }
+    }
 
-    private val blueTrack: AudioTrack? = try { buildStaticTrack(SwitchType.BLUE) } catch (_: Exception) { null }
-    private val redTrack: AudioTrack? = try { buildStaticTrack(SwitchType.RED) } catch (_: Exception) { null }
-    private val brownTrack: AudioTrack? = try { buildStaticTrack(SwitchType.BROWN) } catch (_: Exception) { null }
-
-    /** 轴体 → 对应预分配的 AudioTrack */
-    private val trackMap: Map<SwitchType, AudioTrack> = mapOf(
-        SwitchType.BLUE to blueTrack,
-        SwitchType.RED to redTrack,
-        SwitchType.BROWN to brownTrack
-    ).filterValues { it != null }.mapValues { it.value!! }
-
-    // ---------- ASMR 模式 ----------
-
-    /** ASMR 增强音频 */
-    private val asmrTrack: AudioTrack? = try { buildAsmrTrack() } catch (_: Exception) { null }
+    private var asmrTrack: AudioTrack? = null
+    private fun getAsmrTrack(): AudioTrack? {
+        asmrTrack?.let { return it }
+        return try {
+            buildAsmrTrack().also { asmrTrack = it }
+        } catch (_: Exception) { null }
+    }
 
     // ---------- 雨声 (MODE_STREAM 循环播放) ----------
 
@@ -108,17 +104,14 @@ class SoundEngine {
      * @param type 轴体类型
      */
     fun playClick(type: SwitchType) {
-        val track = trackMap[type] ?: return
+        val track = getTrack(type) ?: return
         try { track.stop() } catch (_: IllegalStateException) { }
         track.reloadStaticData()
         track.play()
     }
 
-    /**
-     * 播放 ASMR 增强版点击音（含多层延迟混响 + 低频 + 高频空气感）
-     */
     fun playAsmrClick() {
-        val track = asmrTrack ?: return
+        val track = getAsmrTrack() ?: return
         try { track.stop() } catch (_: IllegalStateException) { }
         track.reloadStaticData()
         track.play()
@@ -197,14 +190,16 @@ class SoundEngine {
      */
     fun release() {
         stopRain()
-        trackMap.values.forEach { track ->
+        tracks.values.forEach { track ->
             try { track.stop() } catch (_: IllegalStateException) { }
             track.release()
         }
+        tracks.clear()
         asmrTrack?.let {
             try { it.stop() } catch (_: IllegalStateException) { }
             it.release()
         }
+        asmrTrack = null
     }
 
     // =====================================================================

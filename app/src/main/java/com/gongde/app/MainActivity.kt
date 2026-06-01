@@ -15,6 +15,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -118,18 +122,25 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
     var showMeditation by rememberSaveable { mutableStateOf(false) }
     var showAsmr by rememberSaveable { mutableStateOf(false) }
 
-    // 功德增加回调（统一处理：计数 + 历史 + 成就检查 + 提示）
+    // 功德增加回调（IO 操作移到后台线程，减少主线程卡顿）
+    val ioScope = rememberCoroutineScope()
     val onMeritGain: () -> Unit = {
         try {
             val (newTotal, newToday) = store.increment()
             totalCount = newTotal
             todayCount = newToday
             triggerCount++
-            historyStore.recordMerit(java.time.LocalDate.now().toString(), 1)
-            achievementStore.updateStreak()
-            val unlocked = achievementStore.checkAndUnlock(newTotal, newToday)
-            for (achievement in unlocked) {
-                Toast.makeText(context, "🏆 成就解锁：${achievement.name}", Toast.LENGTH_SHORT).show()
+            ioScope.launch(Dispatchers.IO) {
+                historyStore.recordMerit(java.time.LocalDate.now().toString(), 1)
+                achievementStore.updateStreak()
+                val unlocked = achievementStore.checkAndUnlock(newTotal, newToday)
+                if (unlocked.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        for (a in unlocked) {
+                            Toast.makeText(context, "🏆 成就解锁：${a.name}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
         } catch (_: Exception) { }
     }
@@ -332,7 +343,7 @@ private fun BottomNavBar(
         modifier = modifier
             .fillMaxWidth()
             .background(Color(0xDD0A0A1A))
-            .padding(vertical = 8.dp)
+            .padding(vertical = 10.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -345,16 +356,16 @@ private fun BottomNavBar(
                     modifier = Modifier
                         .semantics { contentDescription = tab.label }
                         .clickable { onTabSelected(tab) }
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = tab.icon,
-                        fontSize = 20.sp,
+                        fontSize = 24.sp,
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                     Text(
                         text = tab.label,
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         color = if (isSelected) Color(0xFFFFD54F) else Color(0x66B0BEC5),
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
@@ -372,10 +383,10 @@ private fun HomeButton(text: String, onClick: () -> Unit) {
             .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(20.dp))
             .background(Color(0x08FFFFFF), RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = Color(0x40B0BEC5), fontSize = 12.sp)
+        Text(text, color = Color(0x40B0BEC5), fontSize = 13.sp)
     }
 }
 

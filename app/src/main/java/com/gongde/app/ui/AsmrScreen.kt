@@ -99,8 +99,11 @@ fun AsmrScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // "返回" 文本按钮
-            TextButton(onClick = onBack) {
-                Text("返回", color = MutedGrayColor, fontSize = 14.sp)
+            TextButton(
+                onClick = onBack,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("← 返回", color = MutedGrayColor, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }

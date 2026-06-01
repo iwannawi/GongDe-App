@@ -116,18 +116,6 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(20.dp))
-
-        // ===== 特殊模式 =====
-        SectionTitle("特殊模式")
-        SettingsCard {
-            Column {
-                ModeEntry("🧘 冥想模式", "静心计数，每3秒自动+1") { onOpenMeditation() }
-                Spacer(Modifier.height(8.dp))
-                ModeEntry("🎧 ASMR 模式", "沉浸式音效，双手拇指操作") { onOpenAsmr() }
-            }
-        }
-
         Spacer(Modifier.height(40.dp))
     }
 }
