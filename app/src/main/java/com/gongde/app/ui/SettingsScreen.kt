@@ -30,16 +30,15 @@ import com.gongde.app.ui.theme.CardBorderColor
 import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.MutedGrayColor
-import com.gongde.app.ui.theme.KeycapRed
-import com.gongde.app.ui.theme.KeycapLightRed
 import com.gongde.app.ui.theme.ThemePresets
+import com.gongde.app.viewmodel.SettingsAction
 
 @Composable
 fun SettingsScreen(
     hapticEnabled: Boolean,
     switchType: String,
     themeId: String,
-    onSettingsChange: (String, Any) -> Unit = { _, _ -> },
+    onSettingsAction: (SettingsAction) -> Unit = {},
     onOpenMeditation: () -> Unit = {},
     onOpenAsmr: () -> Unit = {}
 ) {
@@ -65,7 +64,7 @@ fun SettingsScreen(
                 Text("按键震动", color = Color.White, fontSize = 14.sp)
                 Switch(
                     checked = hapticEnabled,
-                    onCheckedChange = { onSettingsChange("haptic", it) },
+                    onCheckedChange = { onSettingsAction(SettingsAction.SetHaptic(it)) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = GoldColor,
@@ -84,15 +83,15 @@ fun SettingsScreen(
         SettingsCard {
             Column {
                 SwitchOption("青轴 · 清脆", "blue", switchType, accent) {
-                    onSettingsChange("switch", it)
+                    onSettingsAction(SettingsAction.SetSwitchType(it))
                 }
                 Spacer(Modifier.height(8.dp))
                 SwitchOption("红轴 · 柔和", "red", switchType, accent) {
-                    onSettingsChange("switch", it)
+                    onSettingsAction(SettingsAction.SetSwitchType(it))
                 }
                 Spacer(Modifier.height(8.dp))
                 SwitchOption("茶轴 · 适中", "brown", switchType, accent) {
-                    onSettingsChange("switch", it)
+                    onSettingsAction(SettingsAction.SetSwitchType(it))
                 }
             }
         }
@@ -110,7 +109,7 @@ fun SettingsScreen(
                         gradient = ThemePresets.getGradient(id),
                         accentColor = ThemePresets.getAccent(id),
                         selected = themeId == id,
-                        onClick = { onSettingsChange("theme", id) }
+                        onClick = { onSettingsAction(SettingsAction.SetTheme(id)) }
                     )
                 }
             }
