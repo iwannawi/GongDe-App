@@ -14,8 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.data.HistoryStore
-import com.gongde.app.ui.theme.AccentBlueColor
 import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -36,6 +36,9 @@ private val DateFmt = DateTimeFormatter.ofPattern("MM月dd日", Locale.CHINESE)
 fun TimelineScreen(historyStore: HistoryStore) {
     val today = LocalDate.now()
     val entries = historyStore.getRecentDays(30)
+    val accent = GongDeThemeExt.colors.accent
+    // 动态基准值：取最近 30 天最大值（至少为 10 避免除零）
+    val maxCount = (entries.maxOfOrNull { it.second } ?: 10).coerceAtLeast(10)
 
     Column(
         modifier = Modifier
@@ -61,7 +64,7 @@ fun TimelineScreen(historyStore: HistoryStore) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             TopStat("本周功德", historyStore.getWeekTotal(), GoldColor)
-            TopStat("本月功德", historyStore.getMonthTotal(), AccentBlueColor)
+            TopStat("本月功德", historyStore.getMonthTotal(), accent)
         }
 
         // ---- 每日时间线条目 ----
@@ -74,7 +77,7 @@ fun TimelineScreen(historyStore: HistoryStore) {
                 isYesterday -> "昨天"
                 else       -> date.format(DateFmt)
             }
-            TimelineRow(label, count, isToday)
+            TimelineRow(label, count, isToday, maxCount)
         }
     }
 }
@@ -107,9 +110,8 @@ private fun TopStat(label: String, value: Int, color: Color) {
  * [today]  是否为今天，是则高亮背景
  */
 @Composable
-private fun TimelineRow(label: String, count: Int, today: Boolean) {
-    // 进度条比例，最大以50为基准
-    val progress = (count.coerceAtMost(50) / 50f)
+private fun TimelineRow(label: String, count: Int, today: Boolean, maxCount: Int) {
+    val progress = (count.toFloat() / maxCount).coerceIn(0f, 1f)
 
     // 根据功德数混合颜色：低数偏绿，高数偏金
     val barColor = lerp(BarGreen, GoldColor, progress)

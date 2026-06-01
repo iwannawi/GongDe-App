@@ -16,6 +16,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
+import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -253,6 +254,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
     val heightPx = (200 * density).toInt()
     val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
     val canvas = AndroidCanvas(bitmap)
+    val defaultTypeface = Typeface.DEFAULT
 
     // 绘制渐变背景
     val bgPaint = android.graphics.Paint().apply {
@@ -271,6 +273,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
         isFakeBoldText = true
         isAntiAlias = true
         textAlign = android.graphics.Paint.Align.CENTER
+        typeface = defaultTypeface
     }
     canvas.drawText("功德 +$totalCount", widthPx / 2f, heightPx / 2f, textPaint)
 
@@ -280,6 +283,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
         textSize = 12 * density
         isAntiAlias = true
         textAlign = android.graphics.Paint.Align.CENTER
+        typeface = defaultTypeface
     }
     canvas.drawText(getRandomZenQuote(), widthPx / 2f, heightPx / 2f + 40 * density, quotePaint)
 
@@ -289,6 +293,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
         textSize = 9 * density
         isAntiAlias = true
         textAlign = android.graphics.Paint.Align.CENTER
+        typeface = defaultTypeface
     }
     canvas.drawText("解压键盘 · 功德计数", widthPx / 2f, heightPx - 20 * density, watermarkPaint)
 

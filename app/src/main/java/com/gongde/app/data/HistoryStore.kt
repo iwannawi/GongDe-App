@@ -103,4 +103,22 @@ class HistoryStore(context: Context) {
         }
         return total
     }
+
+    /**
+     * 清理超过指定天数的历史数据，防止无限增长
+     * @param keepDays 保留最近多少天的数据，默认 90 天
+     */
+    fun cleanup(keepDays: Int = 90) {
+        val map = getCache()
+        val cutoff = LocalDate.now().minusDays(keepDays.toLong()).format(DATE_FORMAT)
+        val iterator = map.iterator()
+        var changed = false
+        while (iterator.hasNext()) {
+            if (iterator.next().key < cutoff) {
+                iterator.remove()
+                changed = true
+            }
+        }
+        if (changed) flushToDisk(map)
+    }
 }

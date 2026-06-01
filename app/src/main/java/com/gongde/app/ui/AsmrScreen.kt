@@ -42,10 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.data.MeritStore
-import com.gongde.app.ui.theme.AccentBlueColor
 import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.CardBorderColor
 import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.MutedGrayColor
 
 // 本地专用颜色
@@ -54,11 +54,12 @@ private val BgDark = Color(0xFF0D0D1A)
 /**
  * ASMR 模式主界面
  *
- * 全屏沉浸式音效体验，使用大尺寸按钮配合 ASMR 增强音效。
- * 支持白噪音（环境雨声）切换。
- *
- * @param store 功德数据存储，每次按键递增功德
- * @param onBack 返回上一页的回调
+ * @param store 功德数据存储
+ * @param soundEngine 声音引擎（复用 GongDeApp 实例）
+ * @param hapticEngine 触觉引擎（复用 GongDeApp 实例）
+ * @param hapticEnabled 触觉反馈开关
+ * @param onMeritGain 功德增加回调（统一处理历史/成就）
+ * @param onBack 返回回调
  */
 @Composable
 fun AsmrScreen(
@@ -66,11 +67,13 @@ fun AsmrScreen(
     soundEngine: SoundEngine,
     hapticEngine: HapticEngine,
     hapticEnabled: Boolean = true,
+    onMeritGain: () -> Unit = {},
     onBack: () -> Unit
 ) {
     // 功德计数（累计 + 本次）
     var totalCount by remember { mutableIntStateOf(store.totalCount) }
     var sessionCount by remember { mutableIntStateOf(0) }
+    val accent = GongDeThemeExt.colors.accent
 
     // 白噪音（雨声）开关状态
     var rainEnabled by remember { mutableStateOf(false) }
@@ -148,9 +151,9 @@ fun AsmrScreen(
             hapticEnabled = hapticEnabled,
             asmrMode = true,
             onPressed = {
-                // 递增功德（音效和触觉反馈由 MechanicalButton 内部处理）
-                val (newTotal, _) = store.increment()
-                totalCount = newTotal
+                // 通过统一回调递增功德（含历史记录 + 成就检查）
+                onMeritGain()
+                totalCount = store.totalCount
                 sessionCount++
             }
         )
@@ -164,10 +167,10 @@ fun AsmrScreen(
                 .clip(RoundedCornerShape(20.dp))
                 .border(
                     width = 1.dp,
-                    color = if (rainEnabled) AccentBlueColor else CardBorderColor,
+                    color = if (rainEnabled) accent else CardBorderColor,
                     shape = RoundedCornerShape(20.dp)
                 )
-                .background(if (rainEnabled) AccentBlueColor.copy(alpha = 0.1f) else CardBgColor)
+                .background(if (rainEnabled) accent.copy(alpha = 0.1f) else CardBgColor)
                 .clickable {
                     rainEnabled = !rainEnabled
                     if (rainEnabled) {
@@ -183,7 +186,7 @@ fun AsmrScreen(
         ) {
             Text(
                 text = if (rainEnabled) "🔊 白噪音 ON" else "🔇 白噪音 OFF",
-                color = if (rainEnabled) AccentBlueColor else MutedGrayColor,
+                color = if (rainEnabled) accent else MutedGrayColor,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )

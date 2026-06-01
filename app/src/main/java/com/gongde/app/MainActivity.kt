@@ -11,6 +11,7 @@
 package com.gongde.app
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,6 +32,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -106,23 +109,27 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
         }
     }
 
+    // 启动时清理超过 90 天的历史数据
+    LaunchedEffect(Unit) { historyStore.cleanup() }
+
     // 导航状态
     var currentTab by rememberSaveable { mutableStateOf(NavTab.HOME) }
     var showMeditation by rememberSaveable { mutableStateOf(false) }
     var showAsmr by rememberSaveable { mutableStateOf(false) }
 
-    // 功德增加回调（统一处理：计数 + 历史 + 成就检查）
+    // 功德增加回调（统一处理：计数 + 历史 + 成就检查 + 提示）
     val onMeritGain: () -> Unit = {
         val (newTotal, newToday) = store.increment()
         totalCount = newTotal
         todayCount = newToday
         triggerCount++
-        // 记录历史
         historyStore.recordMerit(java.time.LocalDate.now().toString(), 1)
-        // 更新连续天数
         achievementStore.updateStreak()
-        // 检查成就解锁
-        achievementStore.checkAndUnlock(newTotal, newToday)
+        val unlocked = achievementStore.checkAndUnlock(newTotal, newToday)
+        // 成就解锁提示
+        for (achievement in unlocked) {
+            Toast.makeText(context, "🏆 成就解锁：${achievement.name}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // 获取当前主题的背景渐变色
@@ -133,13 +140,14 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
         MeditationScreen(store = store, onBack = { showMeditation = false })
         return
     }
-    // 全屏覆盖：ASMR 模式（复用 GongDeApp 的引擎实例）
+    // 全屏覆盖：ASMR 模式（复用 GongDeApp 的引擎实例和功德回调）
     if (showAsmr) {
         AsmrScreen(
             store = store,
             soundEngine = soundEngine,
             hapticEngine = hapticEngine,
             hapticEnabled = hapticEnabled,
+            onMeritGain = onMeritGain,
             onBack = { showAsmr = false }
         )
         return
@@ -330,6 +338,7 @@ private fun BottomNavBar(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
+                        .semantics { contentDescription = tab.label }
                         .clickable { onTabSelected(tab) }
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {

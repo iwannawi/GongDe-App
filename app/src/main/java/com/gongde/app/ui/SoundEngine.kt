@@ -146,7 +146,7 @@ class SoundEngine {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build()
 
-            rainTrack = track
+            rainTrack = track  // 先赋值，再播放（确保 stopRain 能找到 track）
             track.play()
 
             // 棕噪（随机行走滤波）：每 2 秒为一个循环块

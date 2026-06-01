@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 
 /**
  * 功德计数主面板
@@ -53,6 +55,7 @@ fun MeritCounter(
     todayCount: Int,
     modifier: Modifier = Modifier
 ) {
+    val accent = GongDeThemeExt.colors.accent
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -67,11 +70,11 @@ fun MeritCounter(
                     // 扫描渐变：蓝色和金色交替，形成旋转光效的静态近似
                     Brush.sweepGradient(
                         colors = listOf(
-                            Color(0xFF4FC3F7),   // 浅蓝色
-                            Color(0xFFFFD54F),   // 金色
-                            Color(0xFF4FC3F7),   // 浅蓝色
-                            Color(0xFFFFD54F),   // 金色
-                            Color(0xFF4FC3F7)    // 浅蓝色
+                            accent,   // 浅蓝色
+                            GoldColor,   // 金色
+                            accent,   // 浅蓝色
+                            GoldColor,   // 金色
+                            accent    // 浅蓝色
                         )
                     )
                 )
@@ -105,9 +108,9 @@ fun MeritCounter(
                             // 两端透明，中间蓝金渐变
                             colors = listOf(
                                 Color.Transparent,
-                                Color(0xFF4FC3F7),   // 蓝色
-                                Color(0xFFFFD54F),   // 金色
-                                Color(0xFF4FC3F7),   // 蓝色
+                                accent,   // 蓝色
+                                GoldColor,   // 金色
+                                accent,   // 蓝色
                                 Color.Transparent
                             )
                         ),
@@ -121,7 +124,7 @@ fun MeritCounter(
                     // 顶部标题标签
                     Text(
                         text = "功德计数",
-                        color = Color(0x88FFD54F),       // 半透明金色
+                        color = GoldColor.copy(alpha = 0.53f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         letterSpacing = 4.sp,              // 加宽字间距，增加精致感
@@ -139,8 +142,8 @@ fun MeritCounter(
                         MeritColumn(
                             label = "累计功德",
                             count = totalCount,
-                            accentColor = Color(0xFFFFD54F),       // 金色主题
-                            icon = { LotusIcon(Color(0xFFFFD54F)) }, // 莲花图标
+                            accentColor = GoldColor,       // 金色主题
+                            icon = { LotusIcon(GoldColor) }, // 莲花图标
                             modifier = Modifier.weight(1f)
                         )
 
@@ -153,7 +156,7 @@ fun MeritCounter(
                                     Brush.verticalGradient(
                                         colors = listOf(
                                             Color.Transparent,
-                                            Color(0x554FC3F7),   // 半透明蓝色
+                                            accent.copy(alpha = 0.33f),
                                             Color.Transparent
                                         )
                                     )
@@ -164,8 +167,8 @@ fun MeritCounter(
                         MeritColumn(
                             label = "今日功德",
                             count = todayCount,
-                            accentColor = Color(0xFF4FC3F7),        // 蓝色主题
-                            icon = { ClockIcon(Color(0xFF4FC3F7)) }, // 时钟图标
+                            accentColor = accent,        // 蓝色主题
+                            icon = { ClockIcon(accent) }, // 时钟图标
                             modifier = Modifier.weight(1f)
                         )
                     }

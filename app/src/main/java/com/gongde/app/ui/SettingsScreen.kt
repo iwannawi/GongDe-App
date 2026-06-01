@@ -1,12 +1,7 @@
 /**
  * 设置页面
  *
- * 提供应用各项配置的界面，包括：
- * - 触觉反馈开关
- * - 机械轴声音选择（青/红/茶轴）
- * - 主题切换（4 种预设）
- * - 冥想模式入口
- * - ASMR 模式入口
+ * 使用 Material3 Switch / RadioButton 组件，支持无障碍。
  */
 package com.gongde.app.ui
 
@@ -17,6 +12,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,24 +25,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.CardBgColorColor
+import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.CardBorderColor
-import com.gongde.app.ui.theme.GoldColorColor
+import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.MutedGrayColor
+import com.gongde.app.ui.theme.KeycapRed
+import com.gongde.app.ui.theme.KeycapLightRed
 import com.gongde.app.ui.theme.ThemePresets
 
-// 颜色从 ui.theme.Color 统一导入
-
-/**
- * 设置页面主入口
- *
- * @param hapticEnabled 当前触觉反馈状态
- * @param switchType 当前轴体类型
- * @param themeId 当前主题 ID
- * @param onSettingsChange 设置变更回调 (key, value)
- * @param onOpenMeditation 点击冥想模式的回调
- * @param onOpenAsmr 点击 ASMR 模式的回调
- */
 @Composable
 fun SettingsScreen(
     hapticEnabled: Boolean,
@@ -53,6 +43,7 @@ fun SettingsScreen(
     onOpenMeditation: () -> Unit = {},
     onOpenAsmr: () -> Unit = {}
 ) {
+    val accent = GongDeThemeExt.colors.accent
 
     Column(
         modifier = Modifier
@@ -60,7 +51,6 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // 页面标题
         Text("设置", color = GoldColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(24.dp))
 
@@ -73,23 +63,17 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("按键震动", color = Color.White, fontSize = 14.sp)
-                // 开关按钮
-                Box(
-                    modifier = Modifier
-                        .width(48.dp).height(26.dp)
-                        .clip(RoundedCornerShape(13.dp))
-                        .background(if (hapticEnabled) GoldColor else Color(0xFF333333))
-                        .clickable {
-                            onSettingsChange("haptic", !hapticEnabled)
-                        },
-                    contentAlignment = if (hapticEnabled) Alignment.CenterEnd else Alignment.CenterStart
-                ) {
-                    Box(
-                        Modifier.padding(3.dp).size(20.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White)
+                Switch(
+                    checked = hapticEnabled,
+                    onCheckedChange = { onSettingsChange("haptic", it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = GoldColor,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color(0xFF333333),
+                        uncheckedBorderColor = Color(0xFF555555)
                     )
-                }
+                )
             }
         }
 
@@ -99,15 +83,15 @@ fun SettingsScreen(
         SectionTitle("按键音效")
         SettingsCard {
             Column {
-                SwitchOption("青轴 · 清脆", "blue", switchType) {
+                SwitchOption("青轴 · 清脆", "blue", switchType, accent) {
                     onSettingsChange("switch", it)
                 }
                 Spacer(Modifier.height(8.dp))
-                SwitchOption("红轴 · 柔和", "red", switchType) {
+                SwitchOption("红轴 · 柔和", "red", switchType, accent) {
                     onSettingsChange("switch", it)
                 }
                 Spacer(Modifier.height(8.dp))
-                SwitchOption("茶轴 · 适中", "brown", switchType) {
+                SwitchOption("茶轴 · 适中", "brown", switchType, accent) {
                     onSettingsChange("switch", it)
                 }
             }
@@ -124,6 +108,7 @@ fun SettingsScreen(
                     ThemeOption(
                         name = ThemePresets.getDisplayName(id),
                         gradient = ThemePresets.getGradient(id),
+                        accentColor = ThemePresets.getAccent(id),
                         selected = themeId == id,
                         onClick = { onSettingsChange("theme", id) }
                     )
@@ -147,14 +132,12 @@ fun SettingsScreen(
     }
 }
 
-/** 区域标题 */
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, color = MutedGrayColor, fontSize = 12.sp, letterSpacing = 2.sp,
         modifier = Modifier.padding(bottom = 8.dp))
 }
 
-/** 设置卡片容器 */
 @Composable
 private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
@@ -168,40 +151,40 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     )
 }
 
-/** 声音选项（单选） */
+/** 声音选项（Material3 RadioButton） */
 @Composable
 private fun SwitchOption(
-    label: String, value: String, selected: String, onSelect: (String) -> Unit
+    label: String, value: String, selected: String, accent: Color,
+    onSelect: (String) -> Unit
 ) {
     val isSelected = value == selected
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(if (isSelected) Color(0x15FFD54F) else Color.Transparent)
+            .background(if (isSelected) accent.copy(alpha = 0.08f) else Color.Transparent)
             .clickable { onSelect(value) }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 单选圆点
-        Box(
-            Modifier.size(16.dp).clip(RoundedCornerShape(8.dp))
-                .border(1.5.dp, if (isSelected) GoldColor else MutedGrayColor, RoundedCornerShape(8.dp))
-        ) {
-            if (isSelected) {
-                Box(Modifier.padding(3.dp).fillMaxSize()
-                    .clip(RoundedCornerShape(5.dp)).background(GoldColor))
-            }
-        }
-        Spacer(Modifier.width(10.dp))
+        RadioButton(
+            selected = isSelected,
+            onClick = { onSelect(value) },
+            colors = RadioButtonDefaults.colors(
+                selectedColor = GoldColor,
+                unselectedColor = MutedGrayColor
+            )
+        )
+        Spacer(Modifier.width(6.dp))
         Text(label, color = Color.White, fontSize = 14.sp)
     }
 }
 
-/** 主题选项 */
+/** 主题选项（含背景渐变 + 强调色预览） */
 @Composable
 private fun ThemeOption(
-    name: String, gradient: List<Color>, selected: Boolean, onClick: () -> Unit
+    name: String, gradient: List<Color>, accentColor: Color,
+    selected: Boolean, onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -215,10 +198,16 @@ private fun ThemeOption(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 颜色预览条
+        // 背景色预览
         Box(
-            Modifier.size(32.dp, 16.dp).clip(RoundedCornerShape(4.dp))
+            Modifier.size(28.dp, 16.dp).clip(RoundedCornerShape(4.dp))
                 .background(gradient[1])
+        )
+        Spacer(Modifier.width(4.dp))
+        // 强调色预览
+        Box(
+            Modifier.size(28.dp, 16.dp).clip(RoundedCornerShape(4.dp))
+                .background(accentColor)
         )
         Spacer(Modifier.width(12.dp))
         Text(name, color = Color.White, fontSize = 14.sp)
@@ -229,7 +218,6 @@ private fun ThemeOption(
     }
 }
 
-/** 模式入口 */
 @Composable
 private fun ModeEntry(title: String, subtitle: String, onClick: () -> Unit) {
     Row(
