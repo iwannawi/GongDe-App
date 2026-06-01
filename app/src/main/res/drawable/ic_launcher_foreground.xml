@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Transparent switch housing (clear blue-ish) -->
+    <path
+        android:fillColor="#40BBDEFB"
+        android:pathData="M28,58 L52,58 Q56,58 56,62 L56,72 Q56,76 52,76 L28,76 Q24,76 24,72 L24,62 Q24,58 28,58 Z" />
+    <path
+        android:fillColor="#55BBDEFB"
+        android:pathData="M28,58 L52,58 Q56,58 56,62 L56,72 Q56,76 52,76 L28,76 Q24,76 24,72 L24,62 Q24,58 28,58 Z"
+        android:strokeColor="#88FFFFFF"
+        android:strokeWidth="1" />
+
+    <!-- Red trapezoid keycap: narrower top, wider bottom -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M30,12 L50,12 L56,52 L24,52 Z" />
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M50,12 L56,52 L54,52 L48,12 Z" />
+
+    <!-- White teardrop / water-drop symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,20 C40,20 46,22 46,26 C46,29 44,32 40,34 C36,32 34,29 34,26 C34,22 40,20 40,20 Z" />
+</vector>

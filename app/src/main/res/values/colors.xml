@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="keycap_red">#FFE53935</color>
+    <color name="keycap_dark_red">#FFB71C1C</color>
+    <color name="base_gray">#FF424242</color>
+    <color name="glow_red">#FFFF5252</color>
+    <color name="background_dark">#FF1A1A2E</color>
+    <color name="text_gold">#FFFFD54F</color>
+</resources>
