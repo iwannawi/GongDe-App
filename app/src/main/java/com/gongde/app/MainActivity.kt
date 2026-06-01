@@ -108,6 +108,8 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
 
     // 引擎资源释放
     DisposableEffect(Unit) {
+        // 启动时后台预热 AudioTrack，避免首次点击卡顿
+        soundEngine.warmUp(currentSwitchType)
         onDispose {
             soundEngine.release()
             hapticEngine.release()
@@ -175,10 +177,12 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
                 }.toTypedArray())
             )
     ) {
-        // 背景装饰（法轮 + 科技点阵）
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawSubtleMandala(size.width / 2f, size.height * 0.35f)
-            drawTechDots()
+        // 背景装饰（独立稳定组件，不随状态变化重绘）
+        key(bgColors) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawSubtleMandala(size.width / 2f, size.height * 0.35f)
+                drawTechDots()
+            }
         }
 
         // 飘字层
@@ -242,12 +246,14 @@ private fun GongDeApp(store: MeritStore, onThemeChanged: (String) -> Unit = {}) 
             }
         }
 
-        // 底部导航栏
-        BottomNavBar(
-            currentTab = currentTab,
-            onTabSelected = { currentTab = it },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        // 底部导航栏（独立稳定组件）
+        key("navbar") {
+            BottomNavBar(
+                currentTab = currentTab,
+                onTabSelected = { currentTab = it },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }
 

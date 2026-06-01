@@ -66,8 +66,21 @@ class SoundEngine {
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
         .build()
 
-    // 懒加载：首次使用时才创建 AudioTrack，避免启动时阻塞主线程
     private val tracks = mutableMapOf<SwitchType, AudioTrack>()
+    private var asmrTrack: AudioTrack? = null
+
+    /**
+     * 后台预热：提前创建最常用的 AudioTrack，避免首次点击卡顿
+     * 应在 app 启动时通过协程调用
+     */
+    fun warmUp(defaultType: SwitchType = SwitchType.BLUE) {
+        Thread({
+            try { getTrack(defaultType) } catch (_: Exception) { }
+            try { getAsmrTrack() } catch (_: Exception) { }
+        }, "audio-warmup").apply { isDaemon = true; start() }
+    }
+
+    @Synchronized
     private fun getTrack(type: SwitchType): AudioTrack? {
         tracks[type]?.let { return it }
         return try {
@@ -75,7 +88,7 @@ class SoundEngine {
         } catch (_: Exception) { null }
     }
 
-    private var asmrTrack: AudioTrack? = null
+    @Synchronized
     private fun getAsmrTrack(): AudioTrack? {
         asmrTrack?.let { return it }
         return try {
