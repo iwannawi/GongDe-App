@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -249,6 +250,7 @@ private fun HomeContent(
     onShowReset: () -> Unit,
     soundEngine: SoundEngine,
     hapticEngine: HapticEngine,
+    hapticEnabled: Boolean,
     switchType: SwitchType,
     asmrMode: Boolean
 ) {
@@ -263,6 +265,7 @@ private fun HomeContent(
             modifier = Modifier.size(260.dp, 300.dp),
             soundEngine = soundEngine,
             hapticEngine = hapticEngine,
+            hapticEnabled = hapticEnabled,
             switchType = switchType,
             asmrMode = asmrMode,
             onPressed = onMeritGain
