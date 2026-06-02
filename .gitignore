@@ -34,3 +34,7 @@ local.properties
 
 # Log files
 *.log
+
+# Signing
+*.keystore
+*.jks
