@@ -36,6 +36,16 @@ android {
             )
         }
     }
+
+    // APK 输出命名：GongDe-v1.5.0-rc-20260602.apk
+    android.applicationVariants.configureEach {
+        outputs.configureEach {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val versionName = variant.versionName ?: "unknown"
+            val date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+            output.outputFileName = "GongDe-v${versionName}-rc-${date}.apk"
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
