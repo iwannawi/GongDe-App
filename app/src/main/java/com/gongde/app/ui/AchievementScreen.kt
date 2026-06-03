@@ -37,7 +37,7 @@ fun AchievementScreen(
     val achievements = store.allAchievements
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // ---- 顶部功德统计 ----

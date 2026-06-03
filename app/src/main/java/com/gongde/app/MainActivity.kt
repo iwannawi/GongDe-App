@@ -129,6 +129,7 @@ fun GongDeApp(vm: GongDeViewModel) {
     val bgColors = ThemePresets.getGradient(state.themeId)
     val showBottomBar = currentRoute in listOf(Screen.Home.route, Screen.Achievements.route, Screen.Settings.route)
 
+    // 背景层：渐变 + 科技圆点 + 浮动文字（延伸到系统栏区域）
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -139,41 +140,42 @@ fun GongDeApp(vm: GongDeViewModel) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawTechDots()
         }
-
         FloatingTextContainer(
             triggerCount = state.triggerCount,
-            modifier = Modifier.fillMaxSize().padding(top = 80.dp)
+            modifier = Modifier.fillMaxSize()
         )
+    }
+
+    // 内容层：systemBarsPadding 自动处理状态栏+导航栏留白
+    Column(modifier = Modifier.systemBarsPadding()) {
+        // 页面内容
+        AppContent(currentRoute, vm) { currentRoute = it }
 
         // 底部导航栏
         if (showBottomBar) {
-            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-                NavigationBar(
-                    containerColor = Color(0xDD0A0A1A),
-                    contentColor = Color(0xFFFFD54F)
-                ) {
-                    for (item in NAV_ITEMS) {
-                        val selected = currentRoute == item.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { currentRoute = item.route },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color(0xFFFFD54F),
-                                selectedTextColor = Color(0xFFFFD54F),
-                                unselectedIconColor = Color(0x66B0BEC5),
-                                unselectedTextColor = Color(0x66B0BEC5),
-                                indicatorColor = Color(0x20FFD54F)
-                            )
+            NavigationBar(
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+                containerColor = Color(0xDD0A0A1A),
+                contentColor = Color(0xFFFFD54F)
+            ) {
+                for (item in NAV_ITEMS) {
+                    val selected = currentRoute == item.route
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = { currentRoute = item.route },
+                        icon = { Icon(item.icon, contentDescription = item.label) },
+                        label = { Text(item.label) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFFFFD54F),
+                            selectedTextColor = Color(0xFFFFD54F),
+                            unselectedIconColor = Color(0x66B0BEC5),
+                            unselectedTextColor = Color(0x66B0BEC5),
+                            indicatorColor = Color(0x20FFD54F)
                         )
-                    }
+                    )
                 }
             }
         }
-
-        // 页面内容
-        AppContent(currentRoute, vm, showBottomBar) { currentRoute = it }
     }
 }
 
@@ -181,10 +183,9 @@ fun GongDeApp(vm: GongDeViewModel) {
 fun AppContent(
     currentRoute: String,
     vm: GongDeViewModel,
-    showBottomBar: Boolean,
     onNavigate: (String) -> Unit
 ) {
-    Box(modifier = Modifier.padding(bottom = if (showBottomBar) 80.dp else 0.dp)) {
+    Box(modifier = Modifier.fillMaxSize()) {
         when (currentRoute) {
             Screen.Focus.route -> FocusScreen(
                 initialTotal = vm.uiState.totalCount,
@@ -253,7 +254,7 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
             HomeButton("清零") { vm.showDialog(true) }
             HomeButton("🎧 ASMR") { onNavigate(Screen.Asmr.route) }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(20.dp))
     }
 
     if (state.showResetDialog) {

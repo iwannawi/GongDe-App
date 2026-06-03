@@ -17,8 +17,8 @@ android {
         applicationId = "com.gongde.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5.0"
+        versionCode = 8
+        versionName = "2.0.0"
     }
 
     signingConfigs {
@@ -47,13 +47,13 @@ android {
         }
     }
 
-    // APK 输出命名：GongDe-v1.5.0-rc-20260602.apk
+    // APK 输出命名：GongDe-v2.0.0-20260604.apk
     applicationVariants.configureEach {
         val verName = versionName ?: "unknown"
         outputs.configureEach {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             val date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-            output.outputFileName = "GongDe-v${verName}-rc-${date}.apk"
+            output.outputFileName = "GongDe-v${verName}-${date}.apk"
         }
     }
     compileOptions {

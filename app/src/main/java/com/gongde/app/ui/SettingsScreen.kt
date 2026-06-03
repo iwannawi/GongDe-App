@@ -47,6 +47,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(top = 32.dp)
     ) {
         Text("设置", color = GoldColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(24.dp))

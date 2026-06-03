@@ -59,7 +59,7 @@ fun MeritCounter(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         // 外层发光边框：使用扫描渐变（蓝金交替）模拟动态光效
         Box(

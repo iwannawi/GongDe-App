@@ -20,8 +20,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -94,8 +94,7 @@ fun MechanicalButton(
             contentDescription = "机械键盘按键，点击获得功德",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
+                .fillMaxSize()
                 .graphicsLayer { alpha = (1f - pressAnim.value).coerceIn(0f, 1f) }
         )
         // 按下中间态（过渡时显示）
@@ -104,8 +103,7 @@ fun MechanicalButton(
             contentDescription = "机械键盘按键，点击获得功德",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
+                .fillMaxSize()
                 .graphicsLayer {
                     val t = pressAnim.value
                     alpha = if (t < 0.5f) t * 2f else (1f - t) * 2f
@@ -117,8 +115,7 @@ fun MechanicalButton(
             contentDescription = "机械键盘按键，点击获得功德",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
+                .fillMaxSize()
                 .graphicsLayer { alpha = pressAnim.value.coerceIn(0f, 1f) }
         )
     }
