@@ -19,11 +19,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.data.MeritStore
 import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.CardBorderColor
 import com.gongde.app.ui.theme.GoldColor
@@ -54,29 +57,30 @@ private val BgDark = Color(0xFF0D0D1A)
 /**
  * ASMR 模式主界面
  *
- * @param store 功德数据存储
+ * @param totalCount 累计功德数（从 ViewModel 传入）
  * @param soundEngine 声音引擎（复用 GongDeApp 实例）
  * @param hapticEngine 触觉引擎（复用 GongDeApp 实例）
  * @param hapticEnabled 触觉反馈开关
+ * @param switchType 轴体类型（用户偏好）
  * @param onMeritGain 功德增加回调（统一处理历史/成就）
  * @param onBack 返回回调
  */
 @Composable
 fun AsmrScreen(
-    store: MeritStore,
+    totalCount: Int,
     soundEngine: SoundEngine,
     hapticEngine: HapticEngine,
     hapticEnabled: Boolean = true,
+    switchType: SwitchType = SwitchType.BLUE,
     onMeritGain: () -> Unit = {},
     onBack: () -> Unit
 ) {
-    // 功德计数（累计 + 本次）
-    var totalCount by remember { mutableIntStateOf(store.totalCount) }
-    var sessionCount by remember { mutableIntStateOf(0) }
+    // 本次会话功德数
+    var sessionCount by rememberSaveable { mutableIntStateOf(0) }
     val accent = GongDeThemeExt.colors.accent
 
     // 白噪音（雨声）开关状态
-    var rainEnabled by remember { mutableStateOf(false) }
+    var rainEnabled by rememberSaveable { mutableStateOf(false) }
 
     // 退出时停止雨声
     DisposableEffect(Unit) {
@@ -90,6 +94,7 @@ fun AsmrScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
+            .windowInsetsPadding(WindowInsets.systemBars)
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -152,11 +157,11 @@ fun AsmrScreen(
             soundEngine = soundEngine,
             hapticEngine = hapticEngine,
             hapticEnabled = hapticEnabled,
+            switchType = switchType,
             asmrMode = true,
             onPressed = {
                 // 通过统一回调递增功德（含历史记录 + 成就检查）
                 onMeritGain()
-                totalCount = store.totalCount
                 sessionCount++
             }
         )
@@ -184,7 +189,7 @@ fun AsmrScreen(
                         soundEngine.stopRain()
                     }
                 }
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(

@@ -62,6 +62,7 @@ private data class FloatingTextItem(
  * 每次 triggerCount 变化时创建一个新的浮动文字项。
  *
  * @param triggerCount 触发计数器，每次增加1都会生成一个新浮动文字
+ * @param text 浮动显示的文字内容，默认"功德+1"
  * @param modifier 外部修饰符
  * @param distancePx 浮动距离（像素），文字向上飘浮的总距离
  * @param durationMs 动画持续时间（毫秒），文字从出现到消失的总时长
@@ -69,6 +70,7 @@ private data class FloatingTextItem(
 @Composable
 fun FloatingTextContainer(
     triggerCount: Int,
+    text: String = "功德+1",
     modifier: Modifier = Modifier,
     distancePx: Float = 300f,
     durationMs: Int = 1500
@@ -76,10 +78,10 @@ fun FloatingTextContainer(
     // 浮动文字列表，支持动态添加和移除
     val items = remember { mutableStateListOf<FloatingTextItem>() }
 
-    // 当触发计数变化时，创建一个新的浮动文字项
+    // 当触发计数变化时，创建一个新的浮动文字项（上限 15 个，避免快速点击时过多协程）
     LaunchedEffect(triggerCount) {
         if (triggerCount > 0) {
-            // 使用纳秒时间戳作为唯一 ID，避免重复
+            if (items.size >= 15) items.removeAt(0)
             val item = FloatingTextItem(id = System.nanoTime())
             items.add(item)
         }
@@ -132,9 +134,9 @@ fun FloatingTextContainer(
                     items.remove(item)
                 }
 
-                // 渲染"功德+1"文字，应用所有动画值
+                // 渲染文字，应用所有动画值
                 Text(
-                    text = "功德+1",
+                    text = text,
                     modifier = Modifier
                         .align(Alignment.TopCenter)  // 水平居中对齐
                         .offset {

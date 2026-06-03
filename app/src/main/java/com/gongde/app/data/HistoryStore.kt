@@ -2,6 +2,7 @@ package com.gongde.app.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -46,7 +47,7 @@ class HistoryStore(context: Context) {
             }
             map
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("HistoryStore", "Failed to load history from disk", e)
             mutableMapOf()
         }
     }
@@ -60,10 +61,11 @@ class HistoryStore(context: Context) {
             }
             prefs.edit().putString(KEY_HISTORY_DATA, jsonObject.toString()).apply()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("HistoryStore", "Failed to flush history to disk", e)
         }
     }
 
+    @Synchronized
     fun recordMerit(date: String, count: Int) {
         val map = getCache()
         map[date] = (map[date] ?: 0) + count
@@ -108,6 +110,7 @@ class HistoryStore(context: Context) {
      * 清理超过指定天数的历史数据，防止无限增长
      * @param keepDays 保留最近多少天的数据，默认 90 天
      */
+    @Synchronized
     fun cleanup(keepDays: Int = 90) {
         val map = getCache()
         val cutoff = LocalDate.now().minusDays(keepDays.toLong()).format(DATE_FORMAT)

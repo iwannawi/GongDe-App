@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="merit_prefs" />
+        <include domain="sharedpref" path="history_prefs" />
+        <include domain="sharedpref" path="achievement_prefs" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="merit_prefs" />
+        <include domain="sharedpref" path="history_prefs" />
+        <include domain="sharedpref" path="achievement_prefs" />
+    </device-transfer>
+</data-extraction-rules>

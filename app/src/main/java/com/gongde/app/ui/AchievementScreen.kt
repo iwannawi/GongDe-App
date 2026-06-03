@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.data.Achievement
 import com.gongde.app.data.AchievementStore
-import com.gongde.app.data.HistoryStore
 import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.GoldColor
 
@@ -32,10 +31,9 @@ private val LockedGray = Color(0xFF616161)
 @Composable
 fun AchievementScreen(
     store: AchievementStore,
-    historyStore: HistoryStore
+    weekTotal: Int,
+    monthTotal: Int
 ) {
-    val weekTotal = historyStore.getWeekTotal()
-    val monthTotal = historyStore.getMonthTotal()
     val achievements = store.allAchievements
 
     Column(

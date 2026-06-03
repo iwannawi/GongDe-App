@@ -1,8 +1,5 @@
 <resources>
     <style name="Theme.GongDe" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowTranslucentStatus">true</item>
-        <item name="android:windowTranslucentNavigation">true</item>
+        <!-- Android 15+ 强制 edge-to-edge，由 enableEdgeToEdge() 和 WindowInsets 控制 -->
     </style>
 </resources>

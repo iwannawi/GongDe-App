@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,11 +35,11 @@ private val DateFmt = DateTimeFormatter.ofPattern("MM月dd日", Locale.CHINESE)
  */
 @Composable
 fun TimelineScreen(historyStore: HistoryStore) {
-    val today = LocalDate.now()
-    val entries = historyStore.getRecentDays(30)
+    val today = remember { LocalDate.now() }
+    val entries: List<Pair<String, Int>> = remember { historyStore.getRecentDays(30) }
     val accent = GongDeThemeExt.colors.accent
     // 动态基准值：取最近 30 天最大值（至少为 10 避免除零）
-    val maxCount = (entries.maxOfOrNull { it.second } ?: 10).coerceAtLeast(10)
+    val maxCount = remember(entries) { (entries.maxOfOrNull { pair -> pair.second } ?: 10).coerceAtLeast(10) }
 
     Column(
         modifier = Modifier
@@ -48,7 +49,7 @@ fun TimelineScreen(historyStore: HistoryStore) {
     ) {
         // 标题
         Text(
-            text = "功德时间线",
+            text = "功德日历",
             color = GoldColor,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
@@ -68,7 +69,9 @@ fun TimelineScreen(historyStore: HistoryStore) {
         }
 
         // ---- 每日时间线条目 ----
-        entries.forEach { (dateStr, count) ->
+        for (entry in entries) {
+            val dateStr = entry.first
+            val count = entry.second
             val date = LocalDate.parse(dateStr)
             val isToday = date == today
             val isYesterday = date == today.minusDays(1)

@@ -3,9 +3,9 @@
  *
  * 底部展示功德计数的 UI 面板，包含：
  * - 累计功德和今日功德两列数据展示
- * - 莲花图标（累计功德）和时钟图标（今日功德）
+ * - 星芒图标（累计功德）和时钟图标（今日功德）
  * - 科技感渐变边框和电路装饰线
- * - 底部提示文案"点一下，功德+1"
+ * - 底部提示文案"点一下，功德 +1 ✨"
  */
 
 package com.gongde.app.ui
@@ -143,7 +143,7 @@ fun MeritCounter(
                             label = "累计功德",
                             count = totalCount,
                             accentColor = GoldColor,       // 金色主题
-                            icon = { LotusIcon(GoldColor) }, // 莲花图标
+                            icon = { SparkleIcon(GoldColor) }, // 星芒图标
                             modifier = Modifier.weight(1f)
                         )
 
@@ -175,7 +175,7 @@ fun MeritCounter(
 
                     // 底部提示文案
                     Text(
-                        text = "点一下，功德+1",
+                        text = "点一下，功德 +1 ✨",
                         color = Color(0x55B0BEC5),  // 半透明灰色
                         fontSize = 10.sp,
                         letterSpacing = 0.5.sp,
@@ -197,7 +197,7 @@ fun MeritCounter(
  * @param label 标签文字（如"累计功德"、"今日功德"）
  * @param count 当前功德数值，使用千位分隔格式显示
  * @param accentColor 主题色，用于数字显示和图标
- * @param icon 图标 Composable（莲花或时钟）
+ * @param icon 图标 Composable（星芒或时钟）
  * @param modifier 外部修饰符
  */
 @Composable
@@ -231,36 +231,40 @@ private fun MeritColumn(
     }
 }
 
-// ─── 极简莲花图标（三瓣） ───
+// ─── 极简星芒图标（四角） ───
 
 /**
- * 莲花图标
+ * 星芒图标
  *
- * 使用 Canvas 绘制三瓣莲花轮廓，用于累计功德列的装饰图标。
- * 莲花在佛教文化中象征纯洁和觉悟，契合"功德"主题。
+ * 使用 Canvas 绘制四角星芒，用于累计功德列的装饰图标。
+ * 象征"闪耀"和能量感。
  *
  * @param color 图标颜色
  */
 @Composable
-private fun LotusIcon(color: Color) {
+private fun SparkleIcon(color: Color) {
     Canvas(modifier = Modifier.size(18.dp)) {
-        val cx = size.width / 2f   // 中心 X
-        val cy = size.height / 2f  // 中心 Y
-        val r = size.width * 0.32f // 花瓣半径
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val r = size.width * 0.42f  // 外尖半径
+        val ir = size.width * 0.16f // 内凹半径
 
         val path = Path().apply {
-            // 中间花瓣（顶部）：使用三次贝塞尔曲线绘制弧形花瓣
-            moveTo(cx, cy + r * 0.2f)
-            cubicTo(cx - r * 0.6f, cy - r * 0.8f, cx + r * 0.6f, cy - r * 0.8f, cx, cy + r * 0.2f)
-            // 左侧花瓣：向左上方延伸
-            moveTo(cx, cy + r * 0.2f)
-            cubicTo(cx - r * 1.1f, cy - r * 0.1f, cx - r * 0.2f, cy - r * 1.1f, cx, cy + r * 0.2f)
-            // 右侧花瓣：向右上方延伸
-            moveTo(cx, cy + r * 0.2f)
-            cubicTo(cx + r * 1.1f, cy - r * 0.1f, cx + r * 0.2f, cy - r * 1.1f, cx, cy + r * 0.2f)
+            // 四角星芒：交替内外半径，绘制8个顶点
+            val points = 8
+            for (i in 0 until points) {
+                val angle = (Math.PI * 2 * i / points - Math.PI / 2).toFloat()
+                val radius = if (i % 2 == 0) r else ir
+                val x = cx + kotlin.math.cos(angle.toDouble()).toFloat() * radius
+                val y = cy + kotlin.math.sin(angle.toDouble()).toFloat() * radius
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+            close()
         }
-        // 以描边方式绘制（不填充），线宽1.2dp
         drawPath(path, color = color, style = androidx.compose.ui.graphics.drawscope.Stroke(1.2f))
+
+        // 中心小圆点
+        drawCircle(color, 1.5f, Offset(cx, cy))
     }
 }
 

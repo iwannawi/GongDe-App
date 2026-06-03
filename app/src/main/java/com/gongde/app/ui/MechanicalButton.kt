@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import android.util.Log
 import androidx.compose.ui.unit.dp
 import com.gongde.app.R
 import kotlinx.coroutines.launch
@@ -66,10 +67,16 @@ fun MechanicalButton(
                             soundEngine?.playClick(switchType)
                         }
                         if (hapticEnabled) hapticEngine?.tick()
-                    } catch (_: Exception) { }
+                    } catch (e: Exception) {
+                        Log.e("MechanicalButton", "Audio/haptic failed", e)
+                    }
 
                     scope.launch {
-                        try { onPressed() } catch (_: Exception) { }
+                        try {
+                            onPressed()
+                        } catch (e: Exception) {
+                            Log.e("MechanicalButton", "onPressed callback failed", e)
+                        }
                         pressAnim.animateTo(1f, tween(100, easing = FastOutSlowInEasing))
                         pressAnim.animateTo(0f, tween(220, easing = FastOutSlowInEasing))
                     }
@@ -84,7 +91,7 @@ fun MechanicalButton(
         // 未按下态（按下时淡出）
         Image(
             painter = painterOff,
-            contentDescription = null,
+            contentDescription = "机械键盘按键，点击获得功德",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -94,7 +101,7 @@ fun MechanicalButton(
         // 按下中间态（过渡时显示）
         Image(
             painter = painterMid,
-            contentDescription = null,
+            contentDescription = "机械键盘按键，点击获得功德",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -107,7 +114,7 @@ fun MechanicalButton(
         // 按下到底态（按下时淡入）
         Image(
             painter = painterOn,
-            contentDescription = null,
+            contentDescription = "机械键盘按键，点击获得功德",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()

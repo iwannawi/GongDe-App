@@ -38,9 +38,7 @@ fun SettingsScreen(
     hapticEnabled: Boolean,
     switchType: String,
     themeId: String,
-    onSettingsAction: (SettingsAction) -> Unit = {},
-    onOpenMeditation: () -> Unit = {},
-    onOpenAsmr: () -> Unit = {}
+    onSettingsAction: (SettingsAction) -> Unit = {}
 ) {
     val accent = GongDeThemeExt.colors.accent
 
@@ -115,7 +113,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -202,22 +200,5 @@ private fun ThemeOption(
             Spacer(Modifier.weight(1f))
             Text("当前", color = GoldColor, fontSize = 12.sp)
         }
-    }
-}
-
-@Composable
-private fun ModeEntry(title: String, subtitle: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, color = MutedGrayColor, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-        }
-        Text("›", color = MutedGrayColor, fontSize = 20.sp)
     }
 }

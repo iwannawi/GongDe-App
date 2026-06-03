@@ -5,7 +5,7 @@
  * - 深色渐变背景与装饰性圆圈图案
  * - 键帽小图标
  * - "功德 +{count}" 金色大字
- * - 随机禅语
+ * - 随机轻松语录
  * - App 品牌水印
  * - 系统分享 Intent（截图 + 分享）
  */
@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,12 +53,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import androidx.core.content.FileProvider
 import com.gongde.app.R
 import com.gongde.app.ui.theme.GoldColor
 import java.io.File
 import java.io.FileOutputStream
-import kotlin.random.Random
 
 // ==================== 颜色常量 ====================
 
@@ -66,50 +67,29 @@ private val MediumPurple = Color(0xFF2D1055)
 private val MutedGray = Color(0x55B0BEC5)
 private val CircleBorder = Color(0x22FFFFFF)
 
-// ==================== 禅语库 ====================
-
-private val ZEN_QUOTES = listOf(
-    "一念清净，功德自来",
-    "心若菩提，步步生莲",
-    "万般带不走，唯有业随身",
-    "静坐常思己过，闲谈莫论人非",
-    "一切有为法，如梦幻泡影",
-    "菩提本无树，明镜亦非台",
-    "色即是空，空即是色",
-    "心无挂碍，无有恐怖",
-    "应无所住而生其心",
-    "知足常乐，能忍自安",
-    "善恶到头终有报，人间正道是沧桑",
-    "种如是因，收如是果",
-    "放下屠刀，立地成佛",
-    "苦海无边，回头是岸",
-    "一花一世界，一叶一菩提",
-)
-
-/**
- * 获取一条随机禅语
- */
-fun getRandomZenQuote(): String = ZEN_QUOTES[Random.nextInt(ZEN_QUOTES.size)]
+// ==================== 轻松语录（getRandomFunQuote 定义在 FunQuotes.kt） ====================
 
 /**
  * 分享功德卡片视图
  *
  * @param totalCount 累计功德总数
+ * @param cardGradient 卡片背景渐变色列表（默认紫色兜底）
  * @param modifier 外部修饰符
  */
 @Composable
 fun ShareCardView(
     totalCount: Int,
+    cardGradient: List<Color> = listOf(DeepPurple, MediumPurple),
     modifier: Modifier = Modifier
 ) {
-    val zenQuote = remember(totalCount) { getRandomZenQuote() }
+    val funQuote = remember(totalCount) { getRandomFunQuote() }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(260.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Brush.verticalGradient(listOf(DeepPurple, MediumPurple)))
+            .background(Brush.verticalGradient(cardGradient))
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -152,9 +132,9 @@ fun ShareCardView(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 随机禅语
+            // 随机轻松语录
             Text(
-                text = zenQuote,
+                text = funQuote,
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 13.sp,
                 fontStyle = FontStyle.Italic,
@@ -167,7 +147,7 @@ fun ShareCardView(
 
             // App 品牌水印
             Text(
-                text = "解压键盘 · 功德计数",
+                text = "解压键盘 · 功德+1",
                 color = MutedGray,
                 fontSize = 11.sp,
                 letterSpacing = 2.sp
@@ -188,6 +168,7 @@ fun ShareCardView(
 @Composable
 fun ShareButton(
     totalCount: Int,
+    cardGradient: List<Color> = listOf(DeepPurple, MediumPurple),
     context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
@@ -197,7 +178,7 @@ fun ShareButton(
             .border(1.dp, GoldColor, RoundedCornerShape(10.dp))
             .background(Color.Transparent)
             .clickable {
-                shareMeritCard(context, totalCount)
+                shareMeritCard(context, totalCount, cardGradient)
             }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
@@ -209,7 +190,7 @@ fun ShareButton(
             Text(text = "📤", fontSize = 14.sp, color = GoldColor)
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "分享功德",
+                text = "秀一下功德",
                 color = GoldColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -223,44 +204,50 @@ fun ShareButton(
  *
  * 流程：渲染 View → 截图 → 保存临时文件 → FileProvider URI → 分享 Intent
  */
-private fun shareMeritCard(context: Context, totalCount: Int) {
+private fun shareMeritCard(context: Context, totalCount: Int, cardGradient: List<Color>) {
     try {
-        val bitmap = renderShareBitmap(context, totalCount)
-        val file = File(context.cacheDir, "share_merit.png")
-        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        bitmap.recycle()
+        val bitmap = renderShareBitmap(context, totalCount, cardGradient)
+        try {
+            val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
+            val file = java.io.File(shareDir, "share_merit.png")
+            FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
 
-        val uri = FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", file
-        )
+            val uri = FileProvider.getUriForFile(
+                context, "${context.packageName}.fileprovider", file
+            )
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/png"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, "秀一下功德"))
+        } finally {
+            bitmap.recycle()
         }
-        context.startActivity(Intent.createChooser(intent, "分享功德"))
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e("ShareCard", "Failed to share merit card", e)
     }
 }
 
 /**
- * 将功德卡片渲染为 Bitmap（300x200dp → 对应像素）
+ * 将功德卡片渲染为 Bitmap（300x260dp → 对应像素）
  */
-private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
+private fun renderShareBitmap(context: Context, totalCount: Int, cardGradient: List<Color>): Bitmap {
     val density = context.resources.displayMetrics.density
     val widthPx = (300 * density).toInt()
-    val heightPx = (200 * density).toInt()
+    val heightPx = (260 * density).toInt()
     val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
     val canvas = AndroidCanvas(bitmap)
     val defaultTypeface = Typeface.DEFAULT
 
-    // 绘制渐变背景
+    // 绘制渐变背景（使用主题色）
+    val topColor = (cardGradient.firstOrNull() ?: DeepPurple).toArgb()
+    val bottomColor = (cardGradient.lastOrNull() ?: MediumPurple).toArgb()
     val bgPaint = android.graphics.Paint().apply {
         shader = android.graphics.LinearGradient(
             0f, 0f, 0f, heightPx.toFloat(),
-            0xFF1A0033.toInt(), 0xFF2D1055.toInt(),
+            topColor, bottomColor,
             android.graphics.Shader.TileMode.CLAMP
         )
     }
@@ -277,7 +264,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
     }
     canvas.drawText("功德 +$totalCount", widthPx / 2f, heightPx / 2f, textPaint)
 
-    // 绘制禅语
+    // 绘制轻松语录
     val quotePaint = android.graphics.Paint().apply {
         color = 0xB3FFFFFF.toInt()
         textSize = 12 * density
@@ -285,7 +272,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
         textAlign = android.graphics.Paint.Align.CENTER
         typeface = defaultTypeface
     }
-    canvas.drawText(getRandomZenQuote(), widthPx / 2f, heightPx / 2f + 40 * density, quotePaint)
+    canvas.drawText(getRandomFunQuote(), widthPx / 2f, heightPx / 2f + 40 * density, quotePaint)
 
     // 绘制水印
     val watermarkPaint = android.graphics.Paint().apply {
@@ -295,7 +282,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int): Bitmap {
         textAlign = android.graphics.Paint.Align.CENTER
         typeface = defaultTypeface
     }
-    canvas.drawText("解压键盘 · 功德计数", widthPx / 2f, heightPx - 20 * density, watermarkPaint)
+    canvas.drawText("解压键盘 · 功德+1", widthPx / 2f, heightPx - 20 * density, watermarkPaint)
 
     return bitmap
 }

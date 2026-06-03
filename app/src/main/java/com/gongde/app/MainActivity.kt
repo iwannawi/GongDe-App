@@ -2,8 +2,12 @@ package com.gongde.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,7 +16,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -21,27 +29,31 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gongde.app.navigation.Screen
 import com.gongde.app.ui.*
 import com.gongde.app.ui.theme.GongDeTheme
 import com.gongde.app.ui.theme.ThemePresets
 import com.gongde.app.viewmodel.GongDeViewModel
 import com.gongde.app.viewmodel.SettingsAction
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+    private val vm: GongDeViewModel by viewModels {
+        val app = application as GongDeApplication
+        GongDeViewModel.Factory(app)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val vm: GongDeViewModel = viewModel()
             val state = vm.uiState
 
             GongDeTheme(themeId = state.themeId) {
@@ -51,38 +63,71 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class NavTab(val label: String, val icon: String) {
-    HOME("主页", "⌨"), ACHIEVE("成就", "🏆"), SETTINGS("设置", "⚙")
-}
+/** 底部导航栏项目定义 */
+private data class NavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: String
+)
+
+private val NAV_ITEMS = listOf(
+    NavItem("主页", Icons.Default.Home, Screen.Home.route),
+    NavItem("成就", Icons.Default.Star, Screen.Achievements.route),
+    NavItem("设置", Icons.Default.Settings, Screen.Settings.route)
+)
 
 @Composable
-private fun GongDeApp(vm: GongDeViewModel) {
+fun GongDeApp(vm: GongDeViewModel) {
     val state = vm.uiState
-    var currentTab by rememberSaveable { mutableStateOf(NavTab.HOME) }
-    var showMeditation by rememberSaveable { mutableStateOf(false) }
-    var showAsmr by rememberSaveable { mutableStateOf(false) }
+    var currentRoute by rememberSaveable { mutableStateOf(Screen.Home.route) }
 
-    // 全屏覆盖
-    if (showMeditation) {
-        MeditationScreen(store = vm.uiState.let { _ ->
-            // MeditationScreen needs direct store access for increment
-            com.gongde.app.data.MeritStore(LocalContext.current)
-        }, onBack = { showMeditation = false })
+    // 启动闪屏
+    var showSplash by rememberSaveable { mutableStateOf(true) }
+    val splashAlpha = remember { Animatable(1f) }
+    val splashQuote = remember { getRandomFunQuote() }
+
+    if (showSplash) {
+        BackHandler { /* 闪屏期间拦截返回键 */ }
+        LaunchedEffect(Unit) {
+            delay(800L)
+            splashAlpha.animateTo(0f, animationSpec = tween(400))
+            showSplash = false
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = splashAlpha.value }
+                .background(Color(0xFF0D0D24)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "解压键盘",
+                    color = Color(0xFFFFD54F),
+                    fontSize = 28.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    letterSpacing = 6.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = splashQuote,
+                    color = Color(0xFFFFD54F).copy(alpha = 0.6f),
+                    fontSize = 14.sp,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
         return
     }
-    if (showAsmr) {
-        AsmrScreen(
-            store = com.gongde.app.data.MeritStore(LocalContext.current),
-            soundEngine = vm.soundEngine,
-            hapticEngine = HapticEngine(LocalContext.current),
-            hapticEnabled = state.hapticEnabled,
-            onMeritGain = { vm.incrementMerit() },
-            onBack = { showAsmr = false }
-        )
-        return
+
+    // 系统返回键：非主页 → 回主页
+    BackHandler(enabled = currentRoute != Screen.Home.route) {
+        currentRoute = Screen.Home.route
     }
 
     val bgColors = ThemePresets.getGradient(state.themeId)
+    val showBottomBar = currentRoute in listOf(Screen.Home.route, Screen.Achievements.route, Screen.Settings.route)
 
     Box(
         modifier = Modifier
@@ -91,11 +136,8 @@ private fun GongDeApp(vm: GongDeViewModel) {
                 (i.toFloat() / (bgColors.size - 1)) to c
             }.toTypedArray()))
     ) {
-        key(bgColors) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawSubtleMandala(size.width / 2f, size.height * 0.35f)
-                drawTechDots()
-            }
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawTechDots()
         }
 
         FloatingTextContainer(
@@ -103,147 +145,177 @@ private fun GongDeApp(vm: GongDeViewModel) {
             modifier = Modifier.fillMaxSize().padding(top = 80.dp)
         )
 
-        Column(
-            modifier = Modifier.fillMaxSize().padding(bottom = 80.dp)
-        ) {
-            when (currentTab) {
-                NavTab.HOME -> HomeContent(
-                    onMeritGain = { vm.incrementMerit() },
-                    totalCount = state.totalCount,
-                    todayCount = state.todayCount,
-                    showResetDialog = state.showResetDialog,
-                    onDismissReset = { vm.showDialog(false) },
-                    onConfirmReset = { vm.resetMerit() },
-                    onShowReset = { vm.showDialog(true) },
-                    onShowMeditation = { showMeditation = true },
-                    onShowAsmr = { showAsmr = true },
-                    soundEngine = vm.soundEngine,
-                    hapticEngine = HapticEngine(LocalContext.current),
-                    hapticEnabled = state.hapticEnabled,
-                    switchType = state.switchType,
-                    asmrMode = state.asmrEnabled
-                )
-                NavTab.ACHIEVE -> Column(
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 48.dp)
+        // 底部导航栏
+        if (showBottomBar) {
+            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                NavigationBar(
+                    containerColor = Color(0xDD0A0A1A),
+                    contentColor = Color(0xFFFFD54F)
                 ) {
-                    AchievementScreen(store = vm.achievementStore, historyStore = vm.historyStore)
-                    Spacer(Modifier.height(16.dp))
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        ShareCardView(totalCount = state.totalCount)
+                    for (item in NAV_ITEMS) {
+                        val selected = currentRoute == item.route
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = { currentRoute = item.route },
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color(0xFFFFD54F),
+                                selectedTextColor = Color(0xFFFFD54F),
+                                unselectedIconColor = Color(0x66B0BEC5),
+                                unselectedTextColor = Color(0x66B0BEC5),
+                                indicatorColor = Color(0x20FFD54F)
+                            )
+                        )
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        ShareButton(totalCount = state.totalCount)
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    TimelineScreen(historyStore = vm.historyStore)
                 }
-                NavTab.SETTINGS -> SettingsScreen(
-                    hapticEnabled = state.hapticEnabled,
-                    switchType = vm.uiState.let { com.gongde.app.data.MeritStore(LocalContext.current).switchType },
-                    themeId = state.themeId,
-                    onSettingsAction = { vm.handleSettings(it) }
-                )
             }
         }
 
-        key("navbar") {
-            BottomNavBar(
-                currentTab = currentTab,
-                onTabSelected = { currentTab = it },
-                modifier = Modifier.align(Alignment.BottomCenter)
+        // 页面内容
+        AppContent(currentRoute, vm, showBottomBar) { currentRoute = it }
+    }
+}
+
+@Composable
+fun AppContent(
+    currentRoute: String,
+    vm: GongDeViewModel,
+    showBottomBar: Boolean,
+    onNavigate: (String) -> Unit
+) {
+    Box(modifier = Modifier.padding(bottom = if (showBottomBar) 80.dp else 0.dp)) {
+        when (currentRoute) {
+            Screen.Focus.route -> FocusScreen(
+                initialTotal = vm.uiState.totalCount,
+                onMeritInc = { vm.incrementStore() },
+                onSync = { vm.syncFromStore() },
+                onBack = { onNavigate(Screen.Home.route) }
             )
+            Screen.Asmr.route -> AsmrRoute(vm) { onNavigate(Screen.Home.route) }
+            Screen.Achievements.route -> AchievementsScreen(vm)
+            Screen.Settings.route -> SettingsScreen(
+                hapticEnabled = vm.uiState.hapticEnabled,
+                switchType = vm.uiState.switchType.name.lowercase(),
+                themeId = vm.uiState.themeId,
+                onSettingsAction = { vm.handleSettings(it) }
+            )
+            else -> HomeScreen(vm, onNavigate)
         }
     }
 }
 
-// ==================== HomeContent / BottomNavBar / HomeButton ====================
+// ==================== AsmrRoute ====================
 
 @Composable
-private fun HomeContent(
-    onMeritGain: () -> Unit, totalCount: Int, todayCount: Int,
-    showResetDialog: Boolean, onDismissReset: () -> Unit, onConfirmReset: () -> Unit,
-    onShowReset: () -> Unit, onShowMeditation: () -> Unit, onShowAsmr: () -> Unit,
-    soundEngine: SoundEngine, hapticEngine: HapticEngine,
-    hapticEnabled: Boolean, switchType: SwitchType, asmrMode: Boolean
-) {
+fun AsmrRoute(vm: GongDeViewModel, onBack: () -> Unit) {
+    val state = vm.uiState
+    val hapticEngine = HapticEngine(LocalContext.current)
+    AsmrScreen(
+        totalCount = state.totalCount,
+        soundEngine = vm.soundEngine,
+        hapticEngine = hapticEngine,
+        hapticEnabled = state.hapticEnabled,
+        switchType = state.switchType,
+        onMeritGain = { vm.incrementMerit() },
+        onBack = onBack
+    )
+}
+
+// ==================== HomeScreen ====================
+
+@Composable
+fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
+    val state = vm.uiState
+    val hapticEngine = HapticEngine(LocalContext.current)
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.weight(0.55f))
+        Spacer(Modifier.weight(1f))
         MechanicalButton(
-            modifier = Modifier.size(260.dp, 300.dp),
-            soundEngine = soundEngine, hapticEngine = hapticEngine,
-            hapticEnabled = hapticEnabled, switchType = switchType,
-            asmrMode = asmrMode, onPressed = onMeritGain
+            modifier = Modifier.size(220.dp, 250.dp),
+            soundEngine = vm.soundEngine,
+            hapticEngine = hapticEngine,
+            hapticEnabled = state.hapticEnabled,
+            switchType = state.switchType,
+            asmrMode = false,
+            onPressed = { vm.incrementMerit() }
         )
-        Spacer(Modifier.height(8.dp))
-        Text("解压键盘", color = Color(0x55FFD54F), fontSize = 13.sp, letterSpacing = 3.sp)
-        Spacer(Modifier.weight(0.15f))
-        MeritCounter(totalCount = totalCount, todayCount = todayCount)
-        Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            HomeButton("🧘 冥想") { onShowMeditation() }
-            HomeButton("清零") { onShowReset() }
-            HomeButton("🎧 ASMR") { onShowAsmr() }
+        Spacer(Modifier.height(4.dp))
+        Text("解压键盘", color = Color(0x80FFD54F), fontSize = 13.sp, letterSpacing = 3.sp)
+        Spacer(Modifier.weight(1f))
+        MeritCounter(totalCount = state.totalCount, todayCount = state.todayCount)
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            HomeButton("🧘 专注") { onNavigate(Screen.Focus.route) }
+            HomeButton("清零") { vm.showDialog(true) }
+            HomeButton("🎧 ASMR") { onNavigate(Screen.Asmr.route) }
         }
+        Spacer(Modifier.height(12.dp))
     }
-    if (showResetDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = onDismissReset,
+
+    if (state.showResetDialog) {
+        BackHandler { vm.showDialog(false) }
+        AlertDialog(
+            onDismissRequest = { vm.showDialog(false) },
             containerColor = Color(0xFF1A1A2E),
             titleContentColor = Color(0xFFFFD54F),
             textContentColor = Color(0xFFB0BEC5),
             title = { Text("确认清零") },
-            text = { Text("累计功德和今日功德都将归零，确定吗？") },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = onConfirmReset) { Text("确定", color = Color(0xFFFFD54F)) } },
-            dismissButton = { androidx.compose.material3.TextButton(onClick = onDismissReset) { Text("取消", color = Color(0xFFB0BEC5)) } }
+            text = { Text("累计功德和今日功德都将归零，确定吗？\n成就和历史记录将保留。") },
+            confirmButton = { TextButton(onClick = { vm.resetMerit() }) { Text("确定", color = Color(0xFFFFD54F)) } },
+            dismissButton = { TextButton(onClick = { vm.showDialog(false) }) { Text("取消", color = Color(0xFFB0BEC5)) } }
         )
     }
 }
 
+// ==================== AchievementsScreen ====================
+
 @Composable
-private fun BottomNavBar(currentTab: NavTab, onTabSelected: (NavTab) -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxWidth().background(Color(0xDD0A0A1A)).padding(vertical = 10.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            NavTab.entries.forEach { tab ->
-                val isSelected = tab == currentTab
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.semantics { contentDescription = tab.label }
-                        .clickable { onTabSelected(tab) }
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                ) {
-                    Text(tab.icon, fontSize = 24.sp, modifier = Modifier.padding(bottom = 2.dp))
-                    Text(tab.label, fontSize = 12.sp,
-                        color = if (isSelected) Color(0xFFFFD54F) else Color(0x66B0BEC5),
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                }
-            }
+fun AchievementsScreen(vm: GongDeViewModel) {
+    val state = vm.uiState
+    val bgColors = ThemePresets.getGradient(state.themeId)
+    val cardGrad = listOf(bgColors.getOrElse(0) { Color(0xFF1A0033) }, bgColors.getOrElse(2) { Color(0xFF2D1055) })
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+    ) {
+        AchievementScreen(store = vm.achievementStore, weekTotal = state.weekTotal, monthTotal = state.monthTotal)
+        Spacer(Modifier.height(16.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            ShareCardView(totalCount = state.totalCount, cardGradient = cardGrad)
         }
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            ShareButton(totalCount = state.totalCount, cardGradient = cardGrad)
+        }
+        Spacer(Modifier.height(16.dp))
+        TimelineScreen(historyStore = vm.historyStore)
+        Spacer(Modifier.height(16.dp))
     }
 }
 
+// ==================== HomeButton ====================
+
 @Composable
-private fun HomeButton(text: String, onClick: () -> Unit) {
+fun HomeButton(text: String, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(20.dp))
+        modifier = Modifier
+            .semantics(mergeDescendants = true) { contentDescription = text }
+            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(20.dp))
             .background(Color(0x08FFFFFF), RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 28.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center
-    ) { Text(text, color = Color(0x40B0BEC5), fontSize = 13.sp) }
+    ) { Text(text, color = Color(0x60B0BEC5), fontSize = 14.sp) }
 }
 
 // ==================== 背景装饰 ====================
-
-private fun DrawScope.drawSubtleMandala(cx: Float, cy: Float) {
-    val lines = 12; val radius = size.width * 0.45f; val sc = Color(0x08FFFFFF); val sw = 0.8f
-    for (i in 0 until lines) { val a = (2.0 * Math.PI * i / lines).toFloat(); drawLine(sc, Offset(cx, cy), Offset(cx + cos(a) * radius, cy + sin(a) * radius), sw) }
-    for (r in listOf(0.15f, 0.25f, 0.35f, 0.45f)) { drawCircle(sc, radius * r, Offset(cx, cy), style = androidx.compose.ui.graphics.drawscope.Stroke(sw)) }
-    for (i in 0 until lines) { val a = (2.0 * Math.PI * i / lines).toFloat(); drawCircle(Color(0x0CFFD54F), 3f, Offset(cx + cos(a) * radius * 0.25f, cy + sin(a) * radius * 0.25f)) }
-}
 
 private fun DrawScope.drawTechDots() {
     val sp = 48f; val dc = Color(0x06FFFFFF); val ac = Color(0x0AFFD54F)

@@ -1,16 +1,17 @@
 /**
- * 冥想计时模式
+ * 专注计时模式
  *
- * 全屏冥想计时界面，包含三种状态：
- * - IDLE（待机）：选择冥想时长
+ * 全屏专注计时界面，包含三种状态：
+ * - IDLE（待机）：选择专注时长
  * - RUNNING（运行中）：倒计时进行中，每 3 秒自动 +1 功德
- * - FINISHED（完成）：展示冥想成果统计
+ * - FINISHED（完成）：展示专注成果统计
  *
- * 背景使用缓慢的呼吸动画渐变，营造冥想氛围。
+ * 背景使用缓慢的呼吸动画渐变，营造放松氛围。
  */
 
 package com.gongde.app.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,11 +26,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,11 +54,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.data.MeritStore
 import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.CardBorderColor
 import com.gongde.app.ui.theme.GoldColor
-import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.MutedGrayColor
 import kotlinx.coroutines.delay
 
@@ -62,40 +64,44 @@ import kotlinx.coroutines.delay
 private val BgDark = Color(0xFF0D0D1A)
 private val BgLight = Color(0xFF1A1A30)
 
-// ==================== 冥想状态 ====================
+// ==================== 专注状态 ====================
 
 /**
- * 冥想界面状态枚举
+ * 专注界面状态枚举
  *
- * IDLE    —— 选择冥想时长
+ * IDLE    —— 选择专注时长
  * RUNNING —— 倒计时进行中
- * FINISHED —— 冥想完成，展示结果
+ * FINISHED —— 专注完成，展示结果
  */
-private enum class MeditateState {
+private enum class FocusState {
     IDLE, RUNNING, FINISHED
 }
 
 /**
- * 冥想模式主界面
+ * 专注模式主界面
  *
- * @param store 功德数据存储，用于自动递增功德
+ * @param initialTotal 专注开始时的累计功德数
+ * @param onMeritInc 每次功德增加的回调（记录历史）
+ * @param onSync 退出专注时的同步回调（更新 UI + 检查成就）
  * @param onBack 返回上一页的回调
  */
 @Composable
-fun MeditationScreen(
-    store: MeritStore,
+fun FocusScreen(
+    initialTotal: Int = 0,
+    onMeritInc: () -> Unit = {},
+    onSync: () -> Unit = {},
     onBack: () -> Unit
 ) {
     // 界面状态：待机 / 运行中 / 完成
-    var state by rememberSaveable { mutableStateOf(MeditateState.IDLE.name) }
+    var state by rememberSaveable { mutableStateOf(FocusState.IDLE.name) }
 
-    // 选中的冥想时长（秒），默认 3 分钟
+    // 选中的专注时长（秒），默认 3 分钟
     var selectedDuration by rememberSaveable { mutableIntStateOf(3 * 60) }
 
     // 剩余秒数（倒计时用）
     var remainingSeconds by rememberSaveable { mutableIntStateOf(0) }
 
-    // 本次冥想获得的功德数
+    // 本次专注获得的功德数
     var meritEarned by rememberSaveable { mutableIntStateOf(0) }
 
     // 是否暂停
@@ -104,11 +110,24 @@ fun MeditationScreen(
     // 当前时间戳（用于计算已用时间）
     var elapsedSeconds by rememberSaveable { mutableIntStateOf(0) }
 
-    val currentState = try {
-        MeditateState.valueOf(state)
-    } catch (_: Exception) {
-        MeditateState.IDLE
+    // 功德计时 tick 累积（跨暂停/继续保持，避免丢失 0-2 秒进度）
+    var tickCount by rememberSaveable { mutableIntStateOf(0) }
+
+    // 防止 onSync 被多次调用（倒计时结束 + 返回按钮都会触发）
+    var hasSynced by rememberSaveable { mutableStateOf(false) }
+
+    // 退出确认对话框
+    var showBackConfirm by rememberSaveable { mutableStateOf(false) }
+
+    // 系统返回键：退出确认弹框 → 关闭弹框；无弹框 → 触发退出确认
+    BackHandler(enabled = showBackConfirm) {
+        showBackConfirm = false
     }
+
+    // 专注开始时的累计功德快照（用于展示 "累计 → 累计+N"）
+    var baseTotal by rememberSaveable { mutableIntStateOf(0) }
+
+    val currentState = FocusState.entries.find { it.name == state } ?: FocusState.IDLE
 
     // ─── 呼吸动画：背景渐变在深色与稍亮之间缓慢振荡（4 秒一个周期） ───
     val infiniteTransition = rememberInfiniteTransition(label = "breath")
@@ -127,10 +146,9 @@ fun MeditationScreen(
 
     // ─── 倒计时协程 ───
     // 当状态为 RUNNING 且未暂停时，每秒递减倒计时
-    // 每 3 秒自动调用 store.increment() 增加功德
+    // 每 3 秒自动通过回调增加功德（计入历史）
     LaunchedEffect(state, isPaused) {
-        if (currentState == MeditateState.RUNNING && !isPaused) {
-            var tickCount = 0
+        if (currentState == FocusState.RUNNING && !isPaused) {
             while (remainingSeconds > 0) {
                 delay(1000L)
                 remainingSeconds--
@@ -139,12 +157,13 @@ fun MeditationScreen(
 
                 // 每 3 秒自动获得 1 功德
                 if (tickCount % 3 == 0) {
-                    store.increment()
                     meritEarned++
+                    onMeritInc()
                 }
             }
-            // 倒计时结束，切换到完成状态
-            state = MeditateState.FINISHED.name
+            // 倒计时结束，退出前同步并切换到完成状态
+            if (!hasSynced) { hasSynced = true; onSync() }
+            state = FocusState.FINISHED.name
         }
     }
 
@@ -153,56 +172,85 @@ fun MeditationScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(breathColor)
+            .windowInsetsPadding(WindowInsets.systemBars)
     ) {
         when (currentState) {
-            // ===== 待机状态：选择冥想时长 =====
-            MeditateState.IDLE -> {
+            // ===== 待机状态：选择专注时长 =====
+            FocusState.IDLE -> {
                 IdleContent(
                     selectedDuration = selectedDuration,
                     onSelectDuration = { selectedDuration = it },
                     onStart = {
+                        baseTotal = initialTotal
                         remainingSeconds = selectedDuration
                         meritEarned = 0
                         elapsedSeconds = 0
+                        tickCount = 0
                         isPaused = false
-                        state = MeditateState.RUNNING.name
+                        state = FocusState.RUNNING.name
                     },
                     onBack = onBack
                 )
             }
 
             // ===== 运行状态：倒计时进行中 =====
-            MeditateState.RUNNING -> {
+            FocusState.RUNNING -> {
                 RunningContent(
                     remainingSeconds = remainingSeconds,
                     meritEarned = meritEarned,
+                    baseTotal = baseTotal,
                     isPaused = isPaused,
                     onTogglePause = { isPaused = !isPaused },
-                    onBack = onBack
+                    onBack = { showBackConfirm = true }
                 )
             }
 
-            // ===== 完成状态：展示冥想成果 =====
-            MeditateState.FINISHED -> {
+            // ===== 完成状态：展示专注成果 =====
+            FocusState.FINISHED -> {
                 FinishedContent(
                     totalDuration = selectedDuration,
                     meritEarned = meritEarned,
+                    baseTotal = baseTotal,
                     elapsedSeconds = elapsedSeconds,
-                    onBack = onBack
+                    onBack = { if (!hasSynced) { hasSynced = true; onSync() }; onBack() }
                 )
             }
         }
+    }
+
+    // 退出确认对话框
+    if (showBackConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showBackConfirm = false },
+            containerColor = Color(0xFF1A1A2E),
+            titleContentColor = GoldColor,
+            textContentColor = Color(0xFFB0BEC5),
+            title = { Text("退出专注") },
+            text = { Text("专注进行中，已获得 $meritEarned 功德。确定退出吗？") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showBackConfirm = false
+                    if (!hasSynced) { hasSynced = true; onSync() }
+                    onBack()
+                }) { Text("确定", color = GoldColor) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showBackConfirm = false }) {
+                    Text("取消", color = Color(0xFFB0BEC5))
+                }
+            }
+        )
     }
 }
 
 // ==================== IDLE 状态内容 ====================
 
 /**
- * 待机状态：选择冥想时长并开始
+ * 待机状态：选择专注时长并开始
  *
  * @param selectedDuration 当前选中的时长（秒）
  * @param onSelectDuration 选择时长的回调
- * @param onStart 开始冥想的回调
+ * @param onStart 开始专注的回调
  * @param onBack 返回的回调
  */
 @Composable
@@ -212,7 +260,7 @@ private fun IdleContent(
     onStart: () -> Unit,
     onBack: () -> Unit
 ) {
-    // 可选的冥想时长（分钟）
+    // 可选的专注时长（分钟）
     val durations = listOf(3, 5, 10, 15, 20)
 
     Column(
@@ -241,7 +289,7 @@ private fun IdleContent(
 
         // 页面标题
         Text(
-            text = "冥想模式",
+            text = "专注模式",
             color = GoldColor,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
@@ -252,7 +300,7 @@ private fun IdleContent(
 
         // 副标题说明
         Text(
-            text = "静心计数，每3秒自动获得功德",
+            text = "放松身心，每3秒自动攒功德",
             color = MutedGrayColor,
             fontSize = 13.sp
         )
@@ -270,7 +318,8 @@ private fun IdleContent(
                     DurationCard(
                         minutes = minutes,
                         selected = selectedDuration == minutes * 60,
-                        onClick = { onSelectDuration(minutes * 60) }
+                        onClick = { onSelectDuration(minutes * 60) },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -280,7 +329,8 @@ private fun IdleContent(
                     DurationCard(
                         minutes = minutes,
                         selected = selectedDuration == minutes * 60,
-                        onClick = { onSelectDuration(minutes * 60) }
+                        onClick = { onSelectDuration(minutes * 60) },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -321,11 +371,11 @@ private fun IdleContent(
 private fun DurationCard(
     minutes: Int,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
-            .width(95.dp)
+        modifier = modifier
             .height(72.dp)
             .clip(RoundedCornerShape(12.dp))
             .then(
@@ -359,6 +409,7 @@ private fun DurationCard(
  *
  * @param remainingSeconds 剩余秒数
  * @param meritEarned 本次获得的功德数
+ * @param baseTotal 专注开始时的累计功德
  * @param isPaused 是否暂停中
  * @param onTogglePause 暂停/继续切换回调
  * @param onBack 返回的回调
@@ -367,6 +418,7 @@ private fun DurationCard(
 private fun RunningContent(
     remainingSeconds: Int,
     meritEarned: Int,
+    baseTotal: Int,
     isPaused: Boolean,
     onTogglePause: () -> Unit,
     onBack: () -> Unit
@@ -433,6 +485,13 @@ private fun RunningContent(
             fontSize = 14.sp,
             letterSpacing = 2.sp
         )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "累计: $baseTotal → ${baseTotal + meritEarned}",
+            color = MutedGrayColor,
+            fontSize = 12.sp,
+            letterSpacing = 1.sp
+        )
 
         Spacer(modifier = Modifier.height(30.dp))
     }
@@ -441,10 +500,11 @@ private fun RunningContent(
 // ==================== FINISHED 状态内容 ====================
 
 /**
- * 完成状态：展示冥想成果
+ * 完成状态：展示专注成果
  *
- * @param totalDuration 总冥想时长（秒）
+ * @param totalDuration 总专注时长（秒）
  * @param meritEarned 本次获得的功德数
+ * @param baseTotal 专注开始时的累计功德
  * @param elapsedSeconds 实际经过的秒数
  * @param onBack 返回的回调
  */
@@ -452,6 +512,7 @@ private fun RunningContent(
 private fun FinishedContent(
     totalDuration: Int,
     meritEarned: Int,
+    baseTotal: Int,
     elapsedSeconds: Int,
     onBack: () -> Unit
 ) {
@@ -464,7 +525,7 @@ private fun FinishedContent(
     ) {
         // 完成标题
         Text(
-            text = "冥想完成",
+            text = "专注完成",
             color = GoldColor,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
@@ -481,11 +542,21 @@ private fun FinishedContent(
             fontWeight = FontWeight.Medium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 累计功德变化
+        Text(
+            text = "累计: $baseTotal → ${baseTotal + meritEarned}",
+            color = GoldColor.copy(alpha = 0.6f),
+            fontSize = 16.sp,
+            letterSpacing = 1.sp
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // 时长统计（格式化为 MM:SS）
         Text(
-            text = "冥想时长 ${formatTime(elapsedSeconds)}",
+            text = "专注时长 ${formatTime(elapsedSeconds)}",
             color = MutedGrayColor,
             fontSize = 14.sp,
             letterSpacing = 2.sp

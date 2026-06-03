@@ -73,27 +73,26 @@ class MeritStore(context: Context) {
                 .apply()
         }
 
-    // ==================== 设置项 ====================
+    // ==================== 设置项（带内存缓存） ====================
+
+    private var _hapticEnabled: Boolean = prefs.getBoolean(KEY_HAPTIC, true)
+    private var _switchType: String = prefs.getString(KEY_SWITCH, "blue") ?: "blue"
+    private var _themeId: String = prefs.getString(KEY_THEME, "deep_purple") ?: "deep_purple"
 
     /** 触觉反馈开关（默认开启） */
     var hapticEnabled: Boolean
-        get() = prefs.getBoolean(KEY_HAPTIC, true)
-        set(value) = prefs.edit().putBoolean(KEY_HAPTIC, value).apply()
+        get() = _hapticEnabled
+        set(value) { _hapticEnabled = value; prefs.edit().putBoolean(KEY_HAPTIC, value).apply() }
 
     /** 当前机械轴类型："blue"=青轴 / "red"=红轴 / "brown"=茶轴 */
     var switchType: String
-        get() = prefs.getString(KEY_SWITCH, "blue") ?: "blue"
-        set(value) = prefs.edit().putString(KEY_SWITCH, value).apply()
+        get() = _switchType
+        set(value) { _switchType = value; prefs.edit().putString(KEY_SWITCH, value).apply() }
 
     /** 当前主题 ID：deep_purple / cyber_blue / emerald / flame */
     var themeId: String
-        get() = prefs.getString(KEY_THEME, "deep_purple") ?: "deep_purple"
-        set(value) = prefs.edit().putString(KEY_THEME, value).apply()
-
-    /** ASMR 模式开关 */
-    var asmrEnabled: Boolean
-        get() = prefs.getBoolean(KEY_ASMR, false)
-        set(value) = prefs.edit().putBoolean(KEY_ASMR, value).apply()
+        get() = _themeId
+        set(value) { _themeId = value; prefs.edit().putString(KEY_THEME, value).apply() }
 
     /** 最近活跃日期（用于连续天数计算） */
     var lastActiveDate: String
@@ -131,6 +130,7 @@ class MeritStore(context: Context) {
      *
      * @return 包含新的(累计功德, 今日功德)的 Pair
      */
+    @Synchronized
     fun increment(): Pair<Int, Int> {
         val today = LocalDate.now().format(dateFormatter)
         val currentTotal = _totalCount
@@ -162,7 +162,6 @@ class MeritStore(context: Context) {
         private const val KEY_HAPTIC = "haptic_enabled"
         private const val KEY_SWITCH = "switch_type"
         private const val KEY_THEME = "theme_id"
-        private const val KEY_ASMR = "asmr_enabled"
         private const val KEY_LAST_ACTIVE = "last_active_date"
         private const val KEY_STREAK = "streak"
     }

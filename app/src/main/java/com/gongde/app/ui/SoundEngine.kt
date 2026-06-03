@@ -3,6 +3,7 @@ package com.gongde.app.ui
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.util.Log
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.random.Random
@@ -75,8 +76,8 @@ class SoundEngine {
      */
     fun warmUp(defaultType: SwitchType = SwitchType.BLUE) {
         Thread({
-            try { getTrack(defaultType) } catch (_: Exception) { }
-            try { getAsmrTrack() } catch (_: Exception) { }
+            try { getTrack(defaultType) } catch (e: Exception) { Log.w("SoundEngine", "warmUp track failed", e) }
+            try { getAsmrTrack() } catch (e: Exception) { Log.w("SoundEngine", "warmUp ASMR failed", e) }
         }, "audio-warmup").apply { isDaemon = true; start() }
     }
 
@@ -116,6 +117,7 @@ class SoundEngine {
      * 播放指定轴体的键盘点击音
      * @param type 轴体类型
      */
+    @Synchronized
     fun playClick(type: SwitchType) {
         val track = getTrack(type) ?: return
         try { track.stop() } catch (_: IllegalStateException) { }
@@ -123,6 +125,7 @@ class SoundEngine {
         track.play()
     }
 
+    @Synchronized
     fun playAsmrClick() {
         val track = getAsmrTrack() ?: return
         try { track.stop() } catch (_: IllegalStateException) { }
@@ -164,9 +167,8 @@ class SoundEngine {
             while (isRaining) {
                 // 生成 2 秒棕噪数据
                 for (i in 0 until blockSamples) {
-                    // 棕噪 = 白噪的积分（随机行走），加低通平滑
+                    if (!isRaining) break
                     lastVal += (Random.nextDouble() - 0.5) * 0.3
-                    // 衰减防止溢出
                     lastVal *= 0.998
                     val sample = (lastVal * 5000).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
                     block[i] = sample.toShort()
@@ -180,7 +182,7 @@ class SoundEngine {
                 }
             }
 
-            track.stop()
+            try { track.stop() } catch (_: IllegalStateException) { }
             track.release()
             rainTrack = null
         }, "rain-engine").apply {
@@ -201,6 +203,7 @@ class SoundEngine {
     /**
      * 释放所有 AudioTrack 资源
      */
+    @Synchronized
     fun release() {
         stopRain()
         tracks.values.forEach { track ->

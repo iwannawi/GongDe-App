@@ -65,7 +65,7 @@ object ThemePresets {
         accentColor = Color(0xFF00E5FF) // 青色
     )
 
-    /** 翡翠绿 - 深绿色调，自然禅意 */
+    /** 翡翠绿 - 深绿色调，自然清新 */
     val Emerald = ThemePreset(
         name = "翡翠绿",
         gradient = listOf(
@@ -75,7 +75,7 @@ object ThemePresets {
         accentColor = Color(0xFF69F0AE) // 翠绿
     )
 
-    /** 烈焰红 - 深红色调，热烈庄严 */
+    /** 烈焰红 - 深红色调，热烈奔放 */
     val Flame = ThemePreset(
         name = "烈焰红",
         gradient = listOf(

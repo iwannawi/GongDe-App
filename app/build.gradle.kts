@@ -1,7 +1,12 @@
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -18,10 +23,15 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("${rootProject.projectDir}/release.keystore")
-            storePassword = "gongde2026"
-            keyAlias = "gongde"
-            keyPassword = "gongde2026"
+            val keystoreProps = Properties()
+            val keystoreFile = rootProject.file("keystore.properties")
+            if (keystoreFile.exists()) {
+                keystoreProps.load(keystoreFile.inputStream())
+            }
+            storeFile = file(keystoreProps.getProperty("storeFile", "${rootProject.projectDir}/release.keystore"))
+            storePassword = keystoreProps.getProperty("storePassword", "")
+            keyAlias = keystoreProps.getProperty("keyAlias", "gongde")
+            keyPassword = keystoreProps.getProperty("keyPassword", "")
         }
     }
 
@@ -38,12 +48,12 @@ android {
     }
 
     // APK 输出命名：GongDe-v1.5.0-rc-20260602.apk
-    android.applicationVariants.configureEach {
+    applicationVariants.configureEach {
+        val verName = versionName ?: "unknown"
         outputs.configureEach {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val versionName = variant.versionName ?: "unknown"
-            val date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
-            output.outputFileName = "GongDe-v${versionName}-rc-${date}.apk"
+            val date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+            output.outputFileName = "GongDe-v${verName}-rc-${date}.apk"
         }
     }
     compileOptions {
@@ -67,12 +77,20 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
-
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    testImplementation("org.robolectric:robolectric:4.11.1")
-    testImplementation("androidx.test:core:1.5.0")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }
