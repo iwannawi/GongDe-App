@@ -31,12 +31,12 @@ class PreferencesStore(private val context: Context) {
     // --- Flow 观察 ---
     val hapticEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.HAPTIC] ?: true }
     val switchType: Flow<String> = context.dataStore.data.map { it[Keys.SWITCH_TYPE] ?: "blue" }
-    val themeId: Flow<String> = context.dataStore.data.map { it[Keys.THEME_ID] ?: "deep_purple" }
+    val themeId: Flow<String> = context.dataStore.data.map { it[Keys.THEME_ID] ?: "morning_mist" }
 
     // --- 同步读取（用于 ViewModel 初始化） ---
     suspend fun getHapticEnabled(): Boolean = context.dataStore.data.first()[Keys.HAPTIC] ?: true
     suspend fun getSwitchType(): String = context.dataStore.data.first()[Keys.SWITCH_TYPE] ?: "blue"
-    suspend fun getThemeId(): String = context.dataStore.data.first()[Keys.THEME_ID] ?: "deep_purple"
+    suspend fun getThemeId(): String = context.dataStore.data.first()[Keys.THEME_ID] ?: "morning_mist"
     suspend fun getLastActiveDate(): String = context.dataStore.data.first()[Keys.LAST_ACTIVE_DATE] ?: ""
     suspend fun getStreak(): Int = context.dataStore.data.first()[Keys.STREAK] ?: 0
 

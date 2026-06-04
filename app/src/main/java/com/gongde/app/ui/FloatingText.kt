@@ -29,11 +29,10 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.GongDeThemeExt
-import com.gongde.app.ui.theme.GoldColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -74,12 +73,11 @@ fun FloatingTextContainer(
     triggerCount: Int,
     text: String = "功德+1",
     modifier: Modifier = Modifier,
-    distancePx: Float = 300f,
-    durationMs: Int = 1500
+    distancePx: Float = 700f,
+    durationMs: Int = 2000
 ) {
     // 浮动文字列表，支持动态添加和移除
     val items = remember { mutableStateListOf<FloatingTextItem>() }
-    val gold = GoldColor
 
     // 当触发计数变化时，创建一个新的浮动文字项（上限 15 个，避免快速点击时过多协程）
     LaunchedEffect(triggerCount) {
@@ -145,19 +143,19 @@ fun FloatingTextContainer(
                         .offset {
                             IntOffset(
                                 x = item.xDrift.dp.roundToPx(),   // 水平随机偏移
-                                y = 230.dp.roundToPx() + item.y.value.dp.roundToPx()  // 垂直位置（基准 + 飘浮偏移）
+                                y = 500.dp.roundToPx() + item.y.value.dp.roundToPx()  // 从键盘位置向上飘
                             )
                         }
                         .alpha(item.alpha.value),  // 应用淡出透明度
                     style = TextStyle(
-                        color = gold,
-                        fontSize = 22.sp,
+                        color = Color(0xFF6B7B8D),
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         shadow = Shadow(
-                            color = Color.Black.copy(alpha = 0.53f),
-                            offset = androidx.compose.ui.geometry.Offset(2f, 2f),
-                            blurRadius = 4f
+                            color = Color.White.copy(alpha = 0.9f),
+                            offset = Offset(0f, 0f),
+                            blurRadius = 6f
                         )
                     )
                 )

@@ -25,9 +25,7 @@ class AchievementStore(context: Context) {
 
         val ACHIEVEMENTS: List<Achievement> = listOf(
             Achievement("first_merit", "新手上路", "累计获得1次功德", "🌱", "totalCount >= 1"),
-            Achievement("merit_100", "小有成就", "累计获得100次功德", "🏅", "totalCount >= 100"),
             Achievement("merit_1000", "手速达人", "累计获得1000次功德", "🏆", "totalCount >= 1000"),
-            Achievement("merit_10000", "功德无量", "累计获得10000次功德", "👑", "totalCount >= 10000"),
             Achievement("daily_100", "今日内卷", "单日获得100次功德", "⚡", "todayCount >= 100"),
             Achievement("daily_1000", "千击不倦", "单日获得1000次功德", "🔥", "todayCount >= 1000"),
             Achievement("streak_7", "周周不落", "连续7天使用", "📅", "streak >= 7"),
@@ -68,9 +66,7 @@ class AchievementStore(context: Context) {
             if (a.id in unlocked) continue
             val met = when (a.id) {
                 "first_merit" -> totalCount >= 1
-                "merit_100" -> totalCount >= 100
                 "merit_1000" -> totalCount >= 1000
-                "merit_10000" -> totalCount >= 10000
                 "daily_100" -> todayCount >= 100
                 "daily_1000" -> todayCount >= 1000
                 "streak_7" -> streak >= 7

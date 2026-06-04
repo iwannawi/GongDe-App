@@ -54,11 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.CardBgColor
-import com.gongde.app.ui.theme.CardBorderColor
-import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
-import com.gongde.app.ui.theme.MutedGrayColor
 import kotlinx.coroutines.delay
 
 // 背景色由主题提供（见 composable 内局部变量）
@@ -227,7 +223,7 @@ fun FocusScreen(
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showBackConfirm = false },
             containerColor = GongDeThemeExt.colors.dialogBg,
-            titleContentColor = GoldColor,
+            titleContentColor = Color.White,
             textContentColor = GongDeThemeExt.colors.textSecondary,
             title = { Text("退出专注") },
             text = { Text("专注进行中，已获得 $meritEarned 功德。确定退出吗？") },
@@ -236,7 +232,7 @@ fun FocusScreen(
                     showBackConfirm = false
                     if (!hasSynced) { hasSynced = true; onSync() }
                     onBack()
-                }) { Text("确定", color = GoldColor) }
+                }) { Text("确定", color = Color.White) }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { showBackConfirm = false }) {
@@ -285,7 +281,7 @@ private fun IdleContent(
                 onClick = onBack,
                 modifier = Modifier.padding(8.dp)
             ) {
-                Text("← 返回", color = MutedGrayColor, fontSize = 16.sp)
+                Text("← 返回", color = GongDeThemeExt.colors.textMuted, fontSize = 18.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -295,7 +291,7 @@ private fun IdleContent(
         // 页面标题
         Text(
             text = "专注模式",
-            color = GoldColor,
+            color = Color.White,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 4.sp
@@ -306,8 +302,8 @@ private fun IdleContent(
         // 副标题说明
         Text(
             text = "放松身心，每3秒自动攒功德",
-            color = MutedGrayColor,
-            fontSize = 13.sp
+            color = GongDeThemeExt.colors.textMuted,
+            fontSize = 15.sp
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -349,7 +345,7 @@ private fun IdleContent(
                 .fillMaxWidth()
                 .height(56.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(GoldColor)
+                .background(GongDeThemeExt.colors.accent)
                 .clickable { onStart() },
             contentAlignment = Alignment.Center
         ) {
@@ -384,24 +380,24 @@ private fun DurationCard(
             .height(72.dp)
             .clip(RoundedCornerShape(12.dp))
             .then(
-                if (selected) Modifier.border(2.dp, GoldColor, RoundedCornerShape(12.dp))
-                else Modifier.border(1.dp, CardBorderColor, RoundedCornerShape(12.dp))
+                if (selected) Modifier.border(2.dp, GongDeThemeExt.colors.accent, RoundedCornerShape(12.dp))
+                else Modifier.border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(12.dp))
             )
-            .background(if (selected) GongDeThemeExt.colors.gold.copy(alpha = 0.08f) else CardBgColor)
+            .background(if (selected) GongDeThemeExt.colors.accent.copy(alpha = 0.08f) else GongDeThemeExt.colors.cardBg)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "$minutes",
-                color = if (selected) GoldColor else Color.White,
-                fontSize = 22.sp,
+                color = if (selected) GongDeThemeExt.colors.accent else Color.White,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = "分钟",
-                color = if (selected) GoldColor.copy(alpha = 0.7f) else MutedGrayColor,
-                fontSize = 11.sp
+                color = if (selected) GongDeThemeExt.colors.accent else GongDeThemeExt.colors.textMuted,
+                fontSize = 15.sp
             )
         }
     }
@@ -444,7 +440,7 @@ private fun RunningContent(
                 onClick = onBack,
                 modifier = Modifier.padding(8.dp)
             ) {
-                Text("← 返回", color = MutedGrayColor, fontSize = 16.sp)
+                Text("← 返回", color = GongDeThemeExt.colors.textMuted, fontSize = 18.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -468,15 +464,15 @@ private fun RunningContent(
                 .width(140.dp)
                 .height(48.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .border(1.5.dp, GoldColor, RoundedCornerShape(24.dp))
+                .border(1.5.dp, Color.White, RoundedCornerShape(24.dp))
                 .background(Color.Transparent)
                 .clickable { onTogglePause() },
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = if (isPaused) "继续" else "暂停",
-                color = GoldColor,
-                fontSize = 16.sp,
+                color = Color.White,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -486,15 +482,15 @@ private fun RunningContent(
         // 本次功德统计
         Text(
             text = "本次功德: $meritEarned",
-            color = GoldColor.copy(alpha = 0.8f),
-            fontSize = 14.sp,
+            color = Color.White,
+            fontSize = 15.sp,
             letterSpacing = 2.sp
         )
         Spacer(Modifier.height(4.dp))
         Text(
             text = "累计: $baseTotal → ${baseTotal + meritEarned}",
-            color = MutedGrayColor,
-            fontSize = 12.sp,
+            color = GongDeThemeExt.colors.textMuted,
+            fontSize = 15.sp,
             letterSpacing = 1.sp
         )
 
@@ -531,7 +527,7 @@ private fun FinishedContent(
         // 完成标题
         Text(
             text = "专注完成",
-            color = GoldColor,
+            color = Color.White,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 4.sp
@@ -542,8 +538,8 @@ private fun FinishedContent(
         // 功德统计
         Text(
             text = "本次获得 $meritEarned 功德",
-            color = GoldColor.copy(alpha = 0.9f),
-            fontSize = 20.sp,
+            color = Color.White,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Medium
         )
 
@@ -552,8 +548,8 @@ private fun FinishedContent(
         // 累计功德变化
         Text(
             text = "累计: $baseTotal → ${baseTotal + meritEarned}",
-            color = GoldColor.copy(alpha = 0.6f),
-            fontSize = 16.sp,
+            color = Color.White,
+            fontSize = 18.sp,
             letterSpacing = 1.sp
         )
 
@@ -562,8 +558,8 @@ private fun FinishedContent(
         // 时长统计（格式化为 MM:SS）
         Text(
             text = "专注时长 ${formatTime(elapsedSeconds)}",
-            color = MutedGrayColor,
-            fontSize = 14.sp,
+            color = GongDeThemeExt.colors.textMuted,
+            fontSize = 15.sp,
             letterSpacing = 2.sp
         )
 
@@ -575,15 +571,15 @@ private fun FinishedContent(
                 .width(160.dp)
                 .height(52.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.5.dp, GoldColor, RoundedCornerShape(16.dp))
+                .border(1.5.dp, Color.White, RoundedCornerShape(16.dp))
                 .background(Color.Transparent)
                 .clickable { onBack() },
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "返回",
-                color = GoldColor,
-                fontSize = 16.sp,
+                color = Color.White,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Medium
             )
         }

@@ -34,7 +34,7 @@ data class MeritUiState(
     val showResetDialog: Boolean = false,
     val hapticEnabled: Boolean = true,
     val switchType: SwitchType = SwitchType.BLUE,
-    val themeId: String = "deep_purple",
+    val themeId: String = "morning_mist",
     val weekTotal: Int = 0,
     val monthTotal: Int = 0,
     val recentDays: List<Pair<String, Int>> = emptyList(),

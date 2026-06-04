@@ -25,11 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.CardBgColor
-import com.gongde.app.ui.theme.CardBorderColor
-import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
-import com.gongde.app.ui.theme.MutedGrayColor
 import com.gongde.app.ui.theme.ThemePresets
 import com.gongde.app.viewmodel.SettingsAction
 
@@ -50,7 +46,7 @@ fun SettingsScreen(
             .padding(horizontal = 20.dp, vertical = 16.dp)
             .padding(top = 32.dp)
     ) {
-        Text("设置", color = GoldColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("设置", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(24.dp))
 
         // ===== 触觉反馈 =====
@@ -61,13 +57,13 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("按键震动", color = colors.textPrimary, fontSize = 14.sp)
+                Text("按键震动", color = colors.textPrimary, fontSize = 15.sp)
                 Switch(
                     checked = hapticEnabled,
                     onCheckedChange = { onSettingsAction(SettingsAction.SetHaptic(it)) },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = colors.textPrimary,
-                        checkedTrackColor = GoldColor,
+                        checkedTrackColor = colors.accent,
                         uncheckedThumbColor = colors.textPrimary,
                         uncheckedTrackColor = colors.barTrack,
                         uncheckedBorderColor = colors.unselected
@@ -121,7 +117,7 @@ fun SettingsScreen(
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text, color = MutedGrayColor, fontSize = 12.sp, letterSpacing = 2.sp,
+    Text(text, color = GongDeThemeExt.colors.textMuted, fontSize = 15.sp, letterSpacing = 2.sp,
         modifier = Modifier.padding(bottom = 8.dp))
 }
 
@@ -131,8 +127,8 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, CardBorderColor, RoundedCornerShape(14.dp))
-            .background(CardBgColor)
+            .border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(14.dp))
+            .background(GongDeThemeExt.colors.cardBg)
             .padding(16.dp),
         content = content
     )
@@ -159,12 +155,12 @@ private fun SwitchOption(
             selected = isSelected,
             onClick = { onSelect(value) },
             colors = RadioButtonDefaults.colors(
-                selectedColor = GoldColor,
-                unselectedColor = MutedGrayColor
+                selectedColor = colors.accent,
+                unselectedColor = GongDeThemeExt.colors.mutedGray
             )
         )
         Spacer(Modifier.width(6.dp))
-        Text(label, color = colors.textPrimary, fontSize = 14.sp)
+        Text(label, color = colors.textPrimary, fontSize = 15.sp)
     }
 }
 
@@ -180,7 +176,7 @@ private fun ThemeOption(
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .then(
-                if (selected) Modifier.border(1.5.dp, GoldColor, RoundedCornerShape(10.dp))
+                if (selected) Modifier.border(1.5.dp, colors.accent, RoundedCornerShape(10.dp))
                 else Modifier.border(1.dp, colors.cardBorder, RoundedCornerShape(10.dp))
             )
             .clickable(onClick = onClick)
@@ -199,10 +195,10 @@ private fun ThemeOption(
                 .background(accentColor)
         )
         Spacer(Modifier.width(12.dp))
-        Text(name, color = colors.textPrimary, fontSize = 14.sp)
+        Text(name, color = colors.textPrimary, fontSize = 15.sp)
         if (selected) {
             Spacer(Modifier.weight(1f))
-            Text("当前", color = GoldColor, fontSize = 12.sp)
+            Text("当前", color = colors.accent, fontSize = 15.sp)
         }
     }
 }

@@ -45,11 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.CardBgColor
-import com.gongde.app.ui.theme.CardBorderColor
-import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
-import com.gongde.app.ui.theme.MutedGrayColor
 
 // 背景色由主题提供（见 bgDark 局部变量）
 
@@ -108,7 +104,7 @@ fun AsmrScreen(
                 onClick = onBack,
                 modifier = Modifier.padding(8.dp)
             ) {
-                Text("← 返回", color = MutedGrayColor, fontSize = 16.sp)
+                Text("← 返回", color = GongDeThemeExt.colors.textMuted, fontSize = 18.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -117,7 +113,7 @@ fun AsmrScreen(
         Text(
             text = "ASMR 模式",
             color = GongDeThemeExt.colors.textPrimary,
-            fontSize = 22.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 3.sp
         )
@@ -132,16 +128,16 @@ fun AsmrScreen(
             // 累计功德
             Text(
                 text = "功德: $totalCount",
-                color = GoldColor.copy(alpha = 0.8f),
-                fontSize = 16.sp,
+                color = GongDeThemeExt.colors.textPrimary,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.width(24.dp))
             // 本次功德
             Text(
                 text = "本次: $sessionCount",
-                color = MutedGrayColor,
-                fontSize = 14.sp
+                color = GongDeThemeExt.colors.textMuted,
+                fontSize = 15.sp
             )
         }
 
@@ -175,10 +171,10 @@ fun AsmrScreen(
                 .clip(RoundedCornerShape(20.dp))
                 .border(
                     width = 1.dp,
-                    color = if (rainEnabled) accent else CardBorderColor,
+                    color = if (rainEnabled) accent else GongDeThemeExt.colors.cardBorder,
                     shape = RoundedCornerShape(20.dp)
                 )
-                .background(if (rainEnabled) accent.copy(alpha = 0.1f) else CardBgColor)
+                .background(if (rainEnabled) accent.copy(alpha = 0.1f) else GongDeThemeExt.colors.cardBg)
                 .clickable {
                     rainEnabled = !rainEnabled
                     if (rainEnabled) {
@@ -194,8 +190,8 @@ fun AsmrScreen(
         ) {
             Text(
                 text = if (rainEnabled) "🔊 白噪音 ON" else "🔇 白噪音 OFF",
-                color = if (rainEnabled) accent else MutedGrayColor,
-                fontSize = 14.sp,
+                color = if (rainEnabled) accent else GongDeThemeExt.colors.textMuted,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium
             )
         }

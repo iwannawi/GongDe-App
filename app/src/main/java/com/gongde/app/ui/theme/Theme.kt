@@ -5,6 +5,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -12,10 +14,13 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+val TextDark = Color(0xFF1A1A1A)
+val TextDarkSecondary = Color(0xFF2A2A2A)
+val TextDarkMuted = Color(0xFF3A3A3A)
+
 @Immutable
 data class ExtendedColors(
     val accent: Color,
-    val gold: Color,
     val mutedGray: Color,
     val cardBg: Color,
     val cardBorder: Color,
@@ -35,83 +40,115 @@ data class ExtendedColors(
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
-        accent = Color(0xFF4FC3F7),
-        gold = GoldColor,
-        mutedGray = MutedGrayColor,
-        cardBg = CardBgColor,
-        cardBorder = CardBorderColor,
-        bgGradient = ThemePresets.DeepPurple.gradient,
-        surfaceDark = Color(0xFF0D0D24),
-        surfaceOverlay = Color(0x08FFFFFF),
-        dialogBg = Color(0xFF1A1A2E),
-        navBarBg = Color(0xE60A0A1A),
-        divider = Color(0x30FFFFFF),
-        unselected = Color(0x66B0BEC5),
-        indicator = Color(0x20FFD54F),
-        barTrack = Color(0xFF333333),
-        textPrimary = Color.White,
-        textSecondary = Color(0xFFB0BEC5),
-        textMuted = Color(0xFF78909C)
+        accent = Color(0xFF5C6BC0),
+        mutedGray = TextDarkMuted,
+        cardBg = Color(0xF0F0F0F0),
+        cardBorder = Color(0xFFD0D0D0),
+        bgGradient = ThemePresets.MorningMist.gradient,
+        surfaceDark = Color(0xFFF1F3F5),
+        surfaceOverlay = Color(0x15000000),
+        dialogBg = Color(0xFFFFFFFF),
+        navBarBg = Color(0xDDFFFFFF),
+        divider = Color(0xFFE0E0E0),
+        unselected = Color(0xFF9E9E9E),
+        indicator = Color(0x335C6BC0),
+        barTrack = Color(0xFFCCCCCC),
+        textPrimary = TextDark,
+        textSecondary = TextDarkSecondary,
+        textMuted = TextDarkMuted
     )
 }
 
 @Composable
 fun GongDeTheme(
-    themeId: String = "deep_purple",
+    themeId: String = "morning_mist",
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
     val preset = ThemePresets.getPreset(themeId)
+    val isLight = preset.isLight
 
     val dynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val colorScheme = when {
-        dynamicColor && darkTheme -> {
+        dynamicColor && !isLight -> {
             val dynamic = dynamicDarkColorScheme(LocalContext.current)
             dynamic.copy(
                 primary = KeycapRed,
-                onPrimary = TextWhite,
-                primaryContainer = KeycapDarkRed,
+                onPrimary = Color.White,
                 secondary = preset.accentColor,
                 background = preset.gradient.first(),
-                surface = Color(0xFF16213E),
-                onSurface = TextWhite,
-                onBackground = TextWhite
+                surface = preset.gradient.getOrElse(2) { Color(0xFF16213E) },
             )
         }
+        dynamicColor && isLight -> {
+            val dynamic = dynamicLightColorScheme(LocalContext.current)
+            dynamic.copy(
+                primary = KeycapRed,
+                onPrimary = Color.White,
+                secondary = preset.accentColor,
+                background = preset.gradient.first(),
+                surface = Color.White,
+            )
+        }
+        isLight -> lightColorScheme(
+            primary = KeycapRed,
+            onPrimary = Color.White,
+            secondary = preset.accentColor,
+            background = preset.gradient.first(),
+            onBackground = TextDark,
+            surface = Color.White,
+            onSurface = TextDark
+        )
         else -> darkColorScheme(
             primary = KeycapRed,
-            onPrimary = TextWhite,
-            primaryContainer = KeycapDarkRed,
+            onPrimary = Color.White,
             secondary = preset.accentColor,
-            onSecondary = TextWhite,
-            tertiary = GlowRed,
-            onTertiary = TextWhite,
             background = preset.gradient.first(),
-            onBackground = TextWhite,
+            onBackground = Color.White,
             surface = Color(0xFF16213E),
-            onSurface = TextWhite
+            onSurface = Color.White
         )
     }
 
-    val extendedColors = ExtendedColors(
-        accent = preset.accentColor,
-        gold = GoldColor,
-        mutedGray = MutedGrayColor,
-        cardBg = CardBgColor,
-        cardBorder = CardBorderColor,
-        bgGradient = preset.gradient,
-        surfaceDark = preset.gradient.getOrElse(2) { Color(0xFF0D0D24) },
-        surfaceOverlay = Color(0x08FFFFFF),
-        dialogBg = Color(0xFF1A1A2E),
-        navBarBg = Color(0xE60A0A1A),
-        divider = Color(0x30FFFFFF),
-        unselected = Color(0x66B0BEC5),
-        indicator = Color(0x20FFD54F),
-        barTrack = Color(0xFF333333),
-        textPrimary = TextWhite,
-        textSecondary = TextSecondary,
-        textMuted = Color(0xFF78909C)
-    )
+    val extendedColors = if (isLight) {
+        ExtendedColors(
+            accent = preset.accentColor,
+            mutedGray = TextDarkMuted,
+            cardBg = Color(0xF0F0F0F0),
+            cardBorder = Color(0xFFD0D0D0),
+            bgGradient = preset.gradient,
+            surfaceDark = preset.gradient.getOrElse(2) { Color(0xFFE9ECEF) },
+            surfaceOverlay = Color(0x15000000),
+            dialogBg = Color.White,
+            navBarBg = Color(0xDDFFFFFF),
+            divider = Color(0xFFCCCCCC),
+            unselected = Color(0xFF4A4A4A),
+            indicator = preset.accentColor.copy(alpha = 0.2f),
+            barTrack = Color(0xFFCCCCCC),
+            textPrimary = TextDark,
+            textSecondary = TextDarkSecondary,
+            textMuted = TextDarkMuted
+        )
+    } else {
+        ExtendedColors(
+            accent = preset.accentColor,
+            mutedGray = Color(0xCCB0BEC5),
+            cardBg = Color(0x20FFFFFF),
+            cardBorder = Color(0x30FFFFFF),
+            bgGradient = preset.gradient,
+            surfaceDark = preset.gradient.getOrElse(2) { Color(0xFF0D0D24) },
+            surfaceOverlay = Color(0x15FFFFFF),
+            dialogBg = Color(0xFF1A1A2E),
+            navBarBg = Color(0xE60A0A1A),
+            divider = Color(0x50FFFFFF),
+            unselected = Color(0xCCB0BEC5),
+            indicator = preset.accentColor.copy(alpha = 0.2f),
+            barTrack = Color(0xFF333333),
+            textPrimary = Color.White,
+            textSecondary = Color(0xFFE0E0E0),
+            textMuted = Color(0xFFB0BEC5)
+        )
+    }
 
     CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
         MaterialTheme(

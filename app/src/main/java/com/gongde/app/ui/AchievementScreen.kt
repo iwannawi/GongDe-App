@@ -17,17 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.data.Achievement
 import com.gongde.app.data.AchievementStore
-import com.gongde.app.ui.theme.CardBgColor
-import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
 
-// 颜色从 ui.theme.Color 统一导入
-private val GoldGlow = Color(0x33FFD54F)
+private val GlowWhite = Color(0x33FFFFFF)
 
-/**
- * 成就界面 - 展示所有成就卡片及本周/本月功德统计
- * 使用普通 Column，由外部提供滚动容器
- */
 @Composable
 fun AchievementScreen(
     store: AchievementStore,
@@ -39,49 +32,64 @@ fun AchievementScreen(
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // ---- 顶部功德统计 ----
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatBadge(label = "本周功德", value = weekTotal, color = GoldColor)
-            StatBadge(label = "本月功德", value = monthTotal, color = colors.accent)
+        // 板块 1：本周/本月功德统计
+        SectionCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatBadge(label = "本周功德", value = weekTotal, color = colors.textPrimary)
+                StatBadge(label = "本月功德", value = monthTotal, color = colors.accent)
+            }
         }
 
-        // ---- 成就卡片列表 ----
-        achievements.forEach { achievement ->
-            val unlocked = store.isUnlocked(achievement.id)
-            AchievementCard(achievement, unlocked)
+        // 板块 2：成就卡片列表
+        SectionCard {
+            Text(
+                text = "成就",
+                color = colors.textPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            achievements.forEach { achievement ->
+                val unlocked = store.isUnlocked(achievement.id)
+                AchievementCard(achievement, unlocked)
+                Spacer(Modifier.height(8.dp))
+            }
         }
     }
 }
 
-/**
- * 顶部统计徽章
- */
+@Composable
+private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+    val colors = GongDeThemeExt.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(colors.cardBg)
+            .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        content = content
+    )
+}
+
 @Composable
 private fun StatBadge(label: String, value: Int, color: Color) {
     val colors = GongDeThemeExt.colors
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "$value", color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Text(text = label, color = colors.textSecondary, fontSize = 13.sp)
+        Text(text = label, color = colors.textSecondary, fontSize = 15.sp)
     }
 }
 
-/**
- * 单个成就卡片
- * - 已解锁：金色边框 + 金色辉光
- * - 未解锁：灰色边框，图标变暗，描述显示 "???"
- */
 @Composable
 private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
     val colors = GongDeThemeExt.colors
-    val borderColor = if (unlocked) GoldColor else colors.barTrack
-    val descriptionText = achievement.description  // 始终显示描述
+    val borderColor = if (unlocked) colors.accent else colors.barTrack
     val nameAlpha = if (unlocked) 1f else 0.5f
     val iconAlpha = if (unlocked) 1f else 0.35f
 
@@ -90,22 +98,21 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
             .fillMaxWidth()
             .then(
                 if (unlocked)
-                    Modifier.shadow(8.dp, shape = RoundedCornerShape(12.dp), ambientColor = GoldGlow)
+                    Modifier.shadow(8.dp, shape = RoundedCornerShape(12.dp), ambientColor = GlowWhite)
                 else Modifier
             )
             .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
-            .background(CardBgColor, RoundedCornerShape(12.dp))
+            .background(colors.cardBg, RoundedCornerShape(12.dp))
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // 图标区域 - 已解锁时带金色背景，未解锁时灰色
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(
-                    if (unlocked) GoldColor.copy(alpha = 0.15f)
+                    if (unlocked) colors.accent.copy(alpha = 0.15f)
                     else colors.barTrack.copy(alpha = 0.5f)
                 ),
             contentAlignment = Alignment.Center
@@ -113,25 +120,22 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
             Text(
                 text = achievement.icon,
                 fontSize = 24.sp,
-                modifier = Modifier.then(
-                    Modifier.graphicsLayer { alpha = iconAlpha }
-                )
+                modifier = Modifier.graphicsLayer { alpha = iconAlpha }
             )
         }
 
-        // 名称 + 描述
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = achievement.name,
-                color = colors.textPrimary.copy(alpha = nameAlpha),
-                fontSize = 16.sp,
+                color = colors.textPrimary,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = descriptionText,
-                color = colors.textMuted.copy(alpha = nameAlpha),
-                fontSize = 13.sp,
+                text = achievement.description,
+                color = colors.textMuted,
+                fontSize = 15.sp,
                 maxLines = 2
             )
         }

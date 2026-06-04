@@ -35,12 +35,11 @@ class HapticEngine(context: Context) {
         if (!v.hasVibrator()) return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // API 26+：使用 VibrationEffect 精确控制振幅
-            v.vibrate(VibrationEffect.createOneShot(20, 128))
+            val amplitude = if (v.hasAmplitudeControl()) 255 else VibrationEffect.DEFAULT_AMPLITUDE
+            v.vibrate(VibrationEffect.createOneShot(30, amplitude))
         } else {
-            // API 25 及以下：降级方案，无法指定振幅
             @Suppress("DEPRECATION")
-            v.vibrate(20)
+            v.vibrate(30)
         }
     }
 

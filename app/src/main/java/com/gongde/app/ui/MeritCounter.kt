@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
 
 /**
@@ -62,38 +61,30 @@ fun MeritCounter(
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // 外层发光边框：使用扫描渐变（蓝金交替）模拟动态光效
+        // 外层边框：accent 渐变
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
                 .background(
-                    // 扫描渐变：蓝色和金色交替，形成旋转光效的静态近似
                     Brush.sweepGradient(
                         colors = listOf(
-                            accent,   // 浅蓝色
-                            GoldColor,   // 金色
-                            accent,   // 浅蓝色
-                            GoldColor,   // 金色
-                            accent    // 浅蓝色
+                            accent.copy(alpha = 0.4f),
+                            colors.cardBorder,
+                            accent.copy(alpha = 0.4f),
+                            colors.cardBorder,
+                            accent.copy(alpha = 0.4f)
                         )
                     )
                 )
-                .padding(1.dp)  // 内缩1dp作为边框宽度
+                .padding(1.dp)
         ) {
-            // 内层卡片：深色半透明背景，与外层形成边框效果
+            // 内层卡片：与主题一致的背景色
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(19.dp))  // 比外层小1dp，露出渐变边框
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                colors.surfaceDark.copy(alpha = 0.87f),
-                                colors.navBarBg
-                            )
-                        )
-                    )
+                    .clip(RoundedCornerShape(19.dp))
+                    .background(colors.cardBg)
                     .padding(horizontal = 20.dp, vertical = 18.dp)
             ) {
                 // 顶部电路装饰线：水平渐变线，模拟科技感电路板
@@ -106,12 +97,11 @@ fun MeritCounter(
                     val w = size.width
                     drawLine(
                         brush = Brush.horizontalGradient(
-                            // 两端透明，中间蓝金渐变
                             colors = listOf(
                                 Color.Transparent,
-                                accent,   // 蓝色
-                                GoldColor,   // 金色
-                                accent,   // 蓝色
+                                accent.copy(alpha = 0.5f),
+                                accent,
+                                accent.copy(alpha = 0.5f),
                                 Color.Transparent
                             )
                         ),
@@ -125,8 +115,8 @@ fun MeritCounter(
                     // 顶部标题标签
                     Text(
                         text = "功德计数",
-                        color = GoldColor.copy(alpha = 0.53f),
-                        fontSize = 11.sp,
+                        color = colors.textMuted,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         letterSpacing = 4.sp,              // 加宽字间距，增加精致感
                         modifier = Modifier
@@ -143,8 +133,8 @@ fun MeritCounter(
                         MeritColumn(
                             label = "累计功德",
                             count = totalCount,
-                            accentColor = GoldColor,       // 金色主题
-                            icon = { SparkleIcon(GoldColor) }, // 星芒图标
+                            accentColor = colors.textPrimary,
+                            icon = { SparkleIcon(colors.accent) },
                             modifier = Modifier.weight(1f)
                         )
 
@@ -177,8 +167,8 @@ fun MeritCounter(
                     // 底部提示文案
                     Text(
                         text = "点一下，功德 +1 ✨",
-                        color = colors.textMuted.copy(alpha = 0.33f),
-                        fontSize = 10.sp,
+                        color = colors.textMuted,
+                        fontSize = 15.sp,
                         letterSpacing = 0.5.sp,
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
@@ -217,14 +207,14 @@ private fun MeritColumn(
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = label,                           // 标签文字
-            fontSize = 11.sp,
-            color = GongDeThemeExt.colors.textSecondary.copy(alpha = 0.47f),
-            fontWeight = FontWeight.Normal
+            fontSize = 15.sp,
+            color = GongDeThemeExt.colors.textSecondary,
+            fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = String.format("%,d", count),     // 带千位分隔符的数字格式
-            fontSize = 30.sp,
+            fontSize = 28.sp,
             color = accentColor,                    // 使用主题色高亮显示
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.sp
