@@ -41,6 +41,7 @@ fun SettingsScreen(
     onSettingsAction: (SettingsAction) -> Unit = {}
 ) {
     val accent = GongDeThemeExt.colors.accent
+    val colors = GongDeThemeExt.colors
 
     Column(
         modifier = Modifier
@@ -60,16 +61,16 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("按键震动", color = Color.White, fontSize = 14.sp)
+                Text("按键震动", color = colors.textPrimary, fontSize = 14.sp)
                 Switch(
                     checked = hapticEnabled,
                     onCheckedChange = { onSettingsAction(SettingsAction.SetHaptic(it)) },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
+                        checkedThumbColor = colors.textPrimary,
                         checkedTrackColor = GoldColor,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFF333333),
-                        uncheckedBorderColor = Color(0xFF555555)
+                        uncheckedThumbColor = colors.textPrimary,
+                        uncheckedTrackColor = colors.barTrack,
+                        uncheckedBorderColor = colors.unselected
                     )
                 )
             }
@@ -144,6 +145,7 @@ private fun SwitchOption(
     onSelect: (String) -> Unit
 ) {
     val isSelected = value == selected
+    val colors = GongDeThemeExt.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,7 +164,7 @@ private fun SwitchOption(
             )
         )
         Spacer(Modifier.width(6.dp))
-        Text(label, color = Color.White, fontSize = 14.sp)
+        Text(label, color = colors.textPrimary, fontSize = 14.sp)
     }
 }
 
@@ -172,13 +174,14 @@ private fun ThemeOption(
     name: String, gradient: List<Color>, accentColor: Color,
     selected: Boolean, onClick: () -> Unit
 ) {
+    val colors = GongDeThemeExt.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .then(
                 if (selected) Modifier.border(1.5.dp, GoldColor, RoundedCornerShape(10.dp))
-                else Modifier.border(1.dp, CardBorderColor, RoundedCornerShape(10.dp))
+                else Modifier.border(1.dp, colors.cardBorder, RoundedCornerShape(10.dp))
             )
             .clickable(onClick = onClick)
             .padding(12.dp),
@@ -196,7 +199,7 @@ private fun ThemeOption(
                 .background(accentColor)
         )
         Spacer(Modifier.width(12.dp))
-        Text(name, color = Color.White, fontSize = 14.sp)
+        Text(name, color = colors.textPrimary, fontSize = 14.sp)
         if (selected) {
             Spacer(Modifier.weight(1f))
             Text("当前", color = GoldColor, fontSize = 12.sp)

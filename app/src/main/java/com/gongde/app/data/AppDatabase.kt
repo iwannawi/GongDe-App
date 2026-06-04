@@ -10,8 +10,16 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
 
     companion object {
-        fun create(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, "gongde.db")
-                .build()
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        fun getInstance(context: Context): AppDatabase =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "gongde.db"
+                ).build().also { INSTANCE = it }
+            }
     }
 }

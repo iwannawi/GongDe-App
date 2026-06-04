@@ -19,10 +19,10 @@ import com.gongde.app.data.Achievement
 import com.gongde.app.data.AchievementStore
 import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 
 // 颜色从 ui.theme.Color 统一导入
 private val GoldGlow = Color(0x33FFD54F)
-private val LockedGray = Color(0xFF616161)
 
 /**
  * 成就界面 - 展示所有成就卡片及本周/本月功德统计
@@ -35,6 +35,7 @@ fun AchievementScreen(
     monthTotal: Int
 ) {
     val achievements = store.allAchievements
+    val colors = GongDeThemeExt.colors
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -48,7 +49,7 @@ fun AchievementScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatBadge(label = "本周功德", value = weekTotal, color = GoldColor)
-            StatBadge(label = "本月功德", value = monthTotal, color = Color(0xFF4FC3F7))
+            StatBadge(label = "本月功德", value = monthTotal, color = colors.accent)
         }
 
         // ---- 成就卡片列表 ----
@@ -64,18 +65,10 @@ fun AchievementScreen(
  */
 @Composable
 private fun StatBadge(label: String, value: Int, color: Color) {
+    val colors = GongDeThemeExt.colors
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = "$value",
-            color = color,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = label,
-            color = Color(0xFFB0BEC5),
-            fontSize = 13.sp
-        )
+        Text(text = "$value", color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text(text = label, color = colors.textSecondary, fontSize = 13.sp)
     }
 }
 
@@ -86,7 +79,8 @@ private fun StatBadge(label: String, value: Int, color: Color) {
  */
 @Composable
 private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
-    val borderColor = if (unlocked) GoldColor else LockedGray
+    val colors = GongDeThemeExt.colors
+    val borderColor = if (unlocked) GoldColor else colors.barTrack
     val descriptionText = achievement.description  // 始终显示描述
     val nameAlpha = if (unlocked) 1f else 0.5f
     val iconAlpha = if (unlocked) 1f else 0.35f
@@ -112,7 +106,7 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
                 .clip(RoundedCornerShape(10.dp))
                 .background(
                     if (unlocked) GoldColor.copy(alpha = 0.15f)
-                    else Color(0xFF424242).copy(alpha = 0.5f)
+                    else colors.barTrack.copy(alpha = 0.5f)
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -129,14 +123,14 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = achievement.name,
-                color = Color.White.copy(alpha = nameAlpha),
+                color = colors.textPrimary.copy(alpha = nameAlpha),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = descriptionText,
-                color = Color(0xFF90A4AE).copy(alpha = nameAlpha),
+                color = colors.textMuted.copy(alpha = nameAlpha),
                 fontSize = 13.sp,
                 maxLines = 2
             )

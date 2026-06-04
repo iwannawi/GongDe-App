@@ -11,6 +11,9 @@ interface HistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entry: DailyHistory)
 
+    @Query("SELECT * FROM daily_history WHERE date = :date LIMIT 1")
+    suspend fun getForDate(date: String): DailyHistory?
+
     @Query("SELECT * FROM daily_history ORDER BY date DESC")
     suspend fun getAll(): List<DailyHistory>
 

@@ -8,10 +8,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,17 +28,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.navigation.Screen
 import com.gongde.app.ui.*
+import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeTheme
+import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.ThemePresets
 import com.gongde.app.viewmodel.GongDeViewModel
 import com.gongde.app.viewmodel.SettingsAction
@@ -55,7 +57,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val state = vm.uiState
-
             GongDeTheme(themeId = state.themeId) {
                 GongDeApp(vm)
             }
@@ -63,7 +64,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 底部导航栏项目定义 */
 private data class NavItem(
     val label: String,
     val icon: ImageVector,
@@ -79,15 +79,23 @@ private val NAV_ITEMS = listOf(
 @Composable
 fun GongDeApp(vm: GongDeViewModel) {
     val state = vm.uiState
+    val colors = GongDeThemeExt.colors
     var currentRoute by rememberSaveable { mutableStateOf(Screen.Home.route) }
+    val context = LocalContext.current
 
-    // 启动闪屏
+    LaunchedEffect(state.toastEvents) {
+        val events = vm.consumeToastEvents()
+        events.forEach { msg ->
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     var showSplash by rememberSaveable { mutableStateOf(true) }
     val splashAlpha = remember { Animatable(1f) }
     val splashQuote = remember { getRandomFunQuote() }
 
     if (showSplash) {
-        BackHandler { /* 闪屏期间拦截返回键 */ }
+        BackHandler { }
         LaunchedEffect(Unit) {
             delay(800L)
             splashAlpha.animateTo(0f, animationSpec = tween(400))
@@ -98,13 +106,13 @@ fun GongDeApp(vm: GongDeViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = splashAlpha.value }
-                .background(Color(0xFF0D0D24)),
+                .background(colors.surfaceDark),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "解压键盘",
-                    color = Color(0xFFFFD54F),
+                    color = colors.gold,
                     fontSize = 28.sp,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     letterSpacing = 6.sp
@@ -112,7 +120,7 @@ fun GongDeApp(vm: GongDeViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = splashQuote,
-                    color = Color(0xFFFFD54F).copy(alpha = 0.6f),
+                    color = colors.gold.copy(alpha = 0.6f),
                     fontSize = 14.sp,
                     letterSpacing = 1.sp
                 )
@@ -121,15 +129,13 @@ fun GongDeApp(vm: GongDeViewModel) {
         return
     }
 
-    // 系统返回键：非主页 → 回主页
     BackHandler(enabled = currentRoute != Screen.Home.route) {
         currentRoute = Screen.Home.route
     }
 
-    val bgColors = ThemePresets.getGradient(state.themeId)
+    val bgColors = colors.bgGradient
     val showBottomBar = currentRoute in listOf(Screen.Home.route, Screen.Achievements.route, Screen.Settings.route)
 
-    // 背景层：渐变 + 科技圆点 + 浮动文字（延伸到系统栏区域）
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -137,26 +143,50 @@ fun GongDeApp(vm: GongDeViewModel) {
                 (i.toFloat() / (bgColors.size - 1)) to c
             }.toTypedArray()))
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawTechDots()
-        }
+        Canvas(modifier = Modifier.fillMaxSize().drawWithCache {
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                size.width.toInt().coerceAtLeast(1),
+                size.height.toInt().coerceAtLeast(1),
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            val sp = 48f
+            val dc = android.graphics.Color.argb(6, 255, 255, 255)
+            val ac = android.graphics.Color.argb(10, 255, 213, 79)
+            val paint = android.graphics.Paint().apply { isAntiAlias = true }
+            var x = 0f
+            while (x < bitmap.width) {
+                var y = 0f
+                while (y < bitmap.height) {
+                    val isAccent = ((x / sp).toInt() + (y / sp).toInt()) % 7 == 0
+                    paint.color = if (isAccent) ac else dc
+                    canvas.drawCircle(x, y, if (isAccent) 1.8f else 1f, paint)
+                    y += sp
+                }
+                x += sp
+            }
+            val imageBitmap = bitmap.asImageBitmap()
+            onDrawBehind {
+                drawImage(imageBitmap)
+            }
+        }) {}
         FloatingTextContainer(
             triggerCount = state.triggerCount,
             modifier = Modifier.fillMaxSize()
         )
     }
 
-    // 内容层：systemBarsPadding 自动处理状态栏+导航栏留白
     Column(modifier = Modifier.systemBarsPadding()) {
-        // 页面内容
-        AppContent(currentRoute, vm) { currentRoute = it }
+        Box(modifier = Modifier.weight(1f)) {
+            AppContent(currentRoute, vm) { currentRoute = it }
+        }
 
-        // 底部导航栏
         if (showBottomBar) {
+            HorizontalDivider(color = colors.divider, thickness = 1.dp)
             NavigationBar(
-                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
-                containerColor = Color(0xDD0A0A1A),
-                contentColor = Color(0xFFFFD54F)
+                containerColor = colors.navBarBg,
+                contentColor = colors.gold,
+                tonalElevation = 0.dp
             ) {
                 for (item in NAV_ITEMS) {
                     val selected = currentRoute == item.route
@@ -166,11 +196,11 @@ fun GongDeApp(vm: GongDeViewModel) {
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         label = { Text(item.label) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFFFFD54F),
-                            selectedTextColor = Color(0xFFFFD54F),
-                            unselectedIconColor = Color(0x66B0BEC5),
-                            unselectedTextColor = Color(0x66B0BEC5),
-                            indicatorColor = Color(0x20FFD54F)
+                            selectedIconColor = colors.gold,
+                            selectedTextColor = colors.gold,
+                            unselectedIconColor = colors.unselected,
+                            unselectedTextColor = colors.unselected,
+                            indicatorColor = colors.indicator
                         )
                     )
                 }
@@ -206,12 +236,14 @@ fun AppContent(
     }
 }
 
-// ==================== AsmrRoute ====================
-
 @Composable
 fun AsmrRoute(vm: GongDeViewModel, onBack: () -> Unit) {
     val state = vm.uiState
-    val hapticEngine = HapticEngine(LocalContext.current)
+    val context = LocalContext.current
+    val hapticEngine = remember { HapticEngine(context) }
+    DisposableEffect(Unit) {
+        onDispose { hapticEngine.release() }
+    }
     AsmrScreen(
         totalCount = state.totalCount,
         soundEngine = vm.soundEngine,
@@ -223,18 +255,36 @@ fun AsmrRoute(vm: GongDeViewModel, onBack: () -> Unit) {
     )
 }
 
-// ==================== HomeScreen ====================
-
 @Composable
 fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
     val state = vm.uiState
-    val hapticEngine = HapticEngine(LocalContext.current)
+    val colors = GongDeThemeExt.colors
+    val context = LocalContext.current
+    val hapticEngine = remember { HapticEngine(context) }
+    DisposableEffect(Unit) {
+        onDispose { hapticEngine.release() }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.weight(1f))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HomeButton("🧘 专注", compact = true) { onNavigate(Screen.Focus.route) }
+            Spacer(Modifier.width(10.dp))
+            HomeButton("清零", compact = true) { vm.showDialog(true) }
+            Spacer(Modifier.width(10.dp))
+            HomeButton("🎧 ASMR", compact = true) { onNavigate(Screen.Asmr.route) }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
         MechanicalButton(
             modifier = Modifier.size(220.dp, 250.dp),
             soundEngine = vm.soundEngine,
@@ -245,40 +295,32 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
             onPressed = { vm.incrementMerit() }
         )
         Spacer(Modifier.height(4.dp))
-        Text("解压键盘", color = Color(0x80FFD54F), fontSize = 13.sp, letterSpacing = 3.sp)
+        Text("解压键盘", color = colors.gold.copy(alpha = 0.5f), fontSize = 13.sp, letterSpacing = 3.sp)
         Spacer(Modifier.weight(1f))
         MeritCounter(totalCount = state.totalCount, todayCount = state.todayCount)
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            HomeButton("🧘 专注") { onNavigate(Screen.Focus.route) }
-            HomeButton("清零") { vm.showDialog(true) }
-            HomeButton("🎧 ASMR") { onNavigate(Screen.Asmr.route) }
-        }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
     }
 
     if (state.showResetDialog) {
         BackHandler { vm.showDialog(false) }
         AlertDialog(
             onDismissRequest = { vm.showDialog(false) },
-            containerColor = Color(0xFF1A1A2E),
-            titleContentColor = Color(0xFFFFD54F),
-            textContentColor = Color(0xFFB0BEC5),
+            containerColor = colors.dialogBg,
+            titleContentColor = colors.gold,
+            textContentColor = colors.textSecondary,
             title = { Text("确认清零") },
             text = { Text("累计功德和今日功德都将归零，确定吗？\n成就和历史记录将保留。") },
-            confirmButton = { TextButton(onClick = { vm.resetMerit() }) { Text("确定", color = Color(0xFFFFD54F)) } },
-            dismissButton = { TextButton(onClick = { vm.showDialog(false) }) { Text("取消", color = Color(0xFFB0BEC5)) } }
+            confirmButton = { TextButton(onClick = { vm.resetMerit() }) { Text("确定", color = colors.gold) } },
+            dismissButton = { TextButton(onClick = { vm.showDialog(false) }) { Text("取消", color = colors.textSecondary) } }
         )
     }
 }
 
-// ==================== AchievementsScreen ====================
-
 @Composable
 fun AchievementsScreen(vm: GongDeViewModel) {
     val state = vm.uiState
-    val bgColors = ThemePresets.getGradient(state.themeId)
-    val cardGrad = listOf(bgColors.getOrElse(0) { Color(0xFF1A0033) }, bgColors.getOrElse(2) { Color(0xFF2D1055) })
+    val colors = GongDeThemeExt.colors
+    val cardGrad = listOf(colors.bgGradient.getOrElse(0) { Color(0xFF1A0033) }, colors.bgGradient.getOrElse(2) { Color(0xFF2D1055) })
 
     Column(
         Modifier
@@ -296,29 +338,31 @@ fun AchievementsScreen(vm: GongDeViewModel) {
             ShareButton(totalCount = state.totalCount, cardGradient = cardGrad)
         }
         Spacer(Modifier.height(16.dp))
-        TimelineScreen(historyStore = vm.historyStore)
+        TimelineScreen(
+            entries = state.recentDays,
+            weekTotal = state.weekTotal,
+            monthTotal = state.monthTotal
+        )
         Spacer(Modifier.height(16.dp))
     }
 }
 
-// ==================== HomeButton ====================
-
 @Composable
-fun HomeButton(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .semantics(mergeDescendants = true) { contentDescription = text }
-            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(20.dp))
-            .background(Color(0x08FFFFFF), RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 28.dp, vertical = 14.dp),
-        contentAlignment = Alignment.Center
-    ) { Text(text, color = Color(0x60B0BEC5), fontSize = 14.sp) }
-}
-
-// ==================== 背景装饰 ====================
-
-private fun DrawScope.drawTechDots() {
-    val sp = 48f; val dc = Color(0x06FFFFFF); val ac = Color(0x0AFFD54F)
-    var x = 0f; while (x < size.width) { var y = 0f; while (y < size.height) { drawCircle(if (((x / sp).toInt() + (y / sp).toInt()) % 7 == 0) ac else dc, if (((x / sp).toInt() + (y / sp).toInt()) % 7 == 0) 1.8f else 1f, Offset(x, y)); y += sp }; x += sp }
+fun HomeButton(text: String, compact: Boolean = false, onClick: () -> Unit) {
+    val colors = GongDeThemeExt.colors
+    OutlinedButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(if (compact) 14.dp else 20.dp),
+        border = BorderStroke(1.dp, colors.cardBorder),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = colors.surfaceOverlay,
+            contentColor = colors.unselected
+        ),
+        contentPadding = PaddingValues(
+            horizontal = if (compact) 16.dp else 28.dp,
+            vertical = if (compact) 8.dp else 14.dp
+        )
+    ) {
+        Text(text, fontSize = if (compact) 12.sp else 14.sp)
+    }
 }

@@ -4,9 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import org.json.JSONArray
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 data class Achievement(
     val id: String,
@@ -21,15 +18,10 @@ class AchievementStore(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("achievement_prefs", Context.MODE_PRIVATE)
 
-    // 内存缓存，避免每次调用都解析 JSON
     private var _unlockedCache: MutableSet<String>? = null
-    private var _streakCache: Int? = null
 
     companion object {
         private const val KEY_UNLOCKED_JSON = "unlocked_json"
-        private const val KEY_LAST_ACTIVE_DATE = "last_active_date"
-        private const val KEY_STREAK = "current_streak"
-        private val DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE
 
         val ACHIEVEMENTS: List<Achievement> = listOf(
             Achievement("first_merit", "新手上路", "累计获得1次功德", "🌱", "totalCount >= 1"),
@@ -45,7 +37,6 @@ class AchievementStore(context: Context) {
 
     val allAchievements: List<Achievement> get() = ACHIEVEMENTS
 
-    /** 从 JSON 字符串读取已解锁 ID 集合（带内存缓存） */
     private fun getUnlockedIds(): MutableSet<String> {
         _unlockedCache?.let { return it }
         val json = prefs.getString(KEY_UNLOCKED_JSON, null) ?: return mutableSetOf<String>().also { _unlockedCache = it }
@@ -60,7 +51,6 @@ class AchievementStore(context: Context) {
         }
     }
 
-    /** 将解锁 ID 集合写入 JSON 字符串 */
     private fun saveUnlockedIds(ids: Set<String>) {
         val arr = JSONArray()
         ids.forEach { arr.put(it) }
@@ -70,9 +60,8 @@ class AchievementStore(context: Context) {
 
     fun isUnlocked(id: String): Boolean = id in getUnlockedIds()
 
-    fun checkAndUnlock(totalCount: Int, todayCount: Int): List<Achievement> {
+    fun checkAndUnlock(totalCount: Int, todayCount: Int, streak: Int): List<Achievement> {
         val unlocked = getUnlockedIds()
-        val currentStreak = _streakCache ?: prefs.getInt(KEY_STREAK, 0).also { _streakCache = it }
         val newlyUnlocked = mutableListOf<Achievement>()
 
         for (a in ACHIEVEMENTS) {
@@ -84,8 +73,8 @@ class AchievementStore(context: Context) {
                 "merit_10000" -> totalCount >= 10000
                 "daily_100" -> todayCount >= 100
                 "daily_1000" -> todayCount >= 1000
-                "streak_7" -> currentStreak >= 7
-                "streak_30" -> currentStreak >= 30
+                "streak_7" -> streak >= 7
+                "streak_30" -> streak >= 30
                 else -> false
             }
             if (met) {
@@ -98,30 +87,5 @@ class AchievementStore(context: Context) {
             saveUnlockedIds(unlocked)
         }
         return newlyUnlocked
-    }
-
-    fun updateStreak() {
-        val today = LocalDate.now().format(DATE_FORMAT)
-        val lastActive = prefs.getString(KEY_LAST_ACTIVE_DATE, null)
-        if (lastActive == today) return
-
-        val currentStreak = _streakCache ?: prefs.getInt(KEY_STREAK, 0)
-        if (lastActive != null) {
-            val daysBetween = ChronoUnit.DAYS.between(
-                LocalDate.parse(lastActive, DATE_FORMAT), LocalDate.now()
-            )
-            val newStreak = if (daysBetween == 1L) currentStreak + 1 else 1
-            _streakCache = newStreak
-            prefs.edit()
-                .putInt(KEY_STREAK, newStreak)
-                .putString(KEY_LAST_ACTIVE_DATE, today)
-                .apply()
-        } else {
-            _streakCache = 1
-            prefs.edit()
-                .putInt(KEY_STREAK, 1)
-                .putString(KEY_LAST_ACTIVE_DATE, today)
-                .apply()
-        }
     }
 }

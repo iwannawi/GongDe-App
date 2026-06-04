@@ -57,6 +57,7 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import com.gongde.app.R
 import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 import java.io.File
 import java.io.FileOutputStream
 
@@ -64,8 +65,6 @@ import java.io.FileOutputStream
 
 private val DeepPurple = Color(0xFF1A0033)
 private val MediumPurple = Color(0xFF2D1055)
-private val MutedGray = Color(0x55B0BEC5)
-private val CircleBorder = Color(0x22FFFFFF)
 
 // ==================== 轻松语录（getRandomFunQuote 定义在 FunQuotes.kt） ====================
 
@@ -83,6 +82,8 @@ fun ShareCardView(
     modifier: Modifier = Modifier
 ) {
     val funQuote = remember(totalCount) { getRandomFunQuote() }
+    val circleBorder = GongDeThemeExt.colors.cardBorder.copy(alpha = 0.11f)
+    val mutedGray = GongDeThemeExt.colors.mutedGray
 
     Box(
         modifier = modifier
@@ -97,11 +98,11 @@ fun ShareCardView(
         Canvas(modifier = Modifier.matchParentSize()) {
             val cx = size.width / 2f
             val cy = size.height / 2f
-            drawCircle(CircleBorder, size.width * 0.45f, Offset(cx, cy), style = Stroke(1.5.dp.toPx()))
-            drawCircle(CircleBorder, size.width * 0.32f, Offset(cx, cy - size.height * 0.05f), style = Stroke(1.dp.toPx()))
-            drawCircle(CircleBorder, size.width * 0.18f, Offset(cx, cy - size.height * 0.02f), style = Stroke(0.8.dp.toPx()))
-            drawCircle(CircleBorder, size.width * 0.12f, Offset(size.width * 0.12f, size.height * 0.2f), style = Stroke(0.8.dp.toPx()))
-            drawCircle(CircleBorder, size.width * 0.1f, Offset(size.width * 0.88f, size.height * 0.75f), style = Stroke(0.8.dp.toPx()))
+            drawCircle(circleBorder, size.width * 0.45f, Offset(cx, cy), style = Stroke(1.5.dp.toPx()))
+            drawCircle(circleBorder, size.width * 0.32f, Offset(cx, cy - size.height * 0.05f), style = Stroke(1.dp.toPx()))
+            drawCircle(circleBorder, size.width * 0.18f, Offset(cx, cy - size.height * 0.02f), style = Stroke(0.8.dp.toPx()))
+            drawCircle(circleBorder, size.width * 0.12f, Offset(size.width * 0.12f, size.height * 0.2f), style = Stroke(0.8.dp.toPx()))
+            drawCircle(circleBorder, size.width * 0.1f, Offset(size.width * 0.88f, size.height * 0.75f), style = Stroke(0.8.dp.toPx()))
         }
 
         // 卡片内容
@@ -135,7 +136,7 @@ fun ShareCardView(
             // 随机轻松语录
             Text(
                 text = funQuote,
-                color = Color.White.copy(alpha = 0.7f),
+                color = GongDeThemeExt.colors.textPrimary.copy(alpha = 0.7f),
                 fontSize = 13.sp,
                 fontStyle = FontStyle.Italic,
                 letterSpacing = 1.sp,
@@ -148,7 +149,7 @@ fun ShareCardView(
             // App 品牌水印
             Text(
                 text = "解压键盘 · 功德+1",
-                color = MutedGray,
+                color = mutedGray,
                 fontSize = 11.sp,
                 letterSpacing = 2.sp
             )
@@ -172,13 +173,18 @@ fun ShareButton(
     context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
+    // 从主题提取 ARGB 色值，供 Bitmap 渲染使用
+    val goldArgb = GoldColor.toArgb()
+    val quoteArgb = GongDeThemeExt.colors.textPrimary.copy(alpha = 0.7f).toArgb()
+    val watermarkArgb = GongDeThemeExt.colors.mutedGray.toArgb()
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .border(1.dp, GoldColor, RoundedCornerShape(10.dp))
             .background(Color.Transparent)
             .clickable {
-                shareMeritCard(context, totalCount, cardGradient)
+                shareMeritCard(context, totalCount, cardGradient, goldArgb, quoteArgb, watermarkArgb)
             }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
@@ -204,9 +210,16 @@ fun ShareButton(
  *
  * 流程：渲染 View → 截图 → 保存临时文件 → FileProvider URI → 分享 Intent
  */
-private fun shareMeritCard(context: Context, totalCount: Int, cardGradient: List<Color>) {
+private fun shareMeritCard(
+    context: Context,
+    totalCount: Int,
+    cardGradient: List<Color>,
+    goldArgb: Int,
+    quoteArgb: Int,
+    watermarkArgb: Int
+) {
     try {
-        val bitmap = renderShareBitmap(context, totalCount, cardGradient)
+        val bitmap = renderShareBitmap(context, totalCount, cardGradient, goldArgb, quoteArgb, watermarkArgb)
         try {
             val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
             val file = java.io.File(shareDir, "share_merit.png")
@@ -233,7 +246,14 @@ private fun shareMeritCard(context: Context, totalCount: Int, cardGradient: List
 /**
  * 将功德卡片渲染为 Bitmap（300x260dp → 对应像素）
  */
-private fun renderShareBitmap(context: Context, totalCount: Int, cardGradient: List<Color>): Bitmap {
+private fun renderShareBitmap(
+    context: Context,
+    totalCount: Int,
+    cardGradient: List<Color>,
+    goldArgb: Int,
+    quoteArgb: Int,
+    watermarkArgb: Int
+): Bitmap {
     val density = context.resources.displayMetrics.density
     val widthPx = (300 * density).toInt()
     val heightPx = (260 * density).toInt()
@@ -255,7 +275,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int, cardGradient: L
 
     // 绘制功德数字
     val textPaint = android.graphics.Paint().apply {
-        color = 0xFFFFD54F.toInt()
+        color = goldArgb
         textSize = 36 * density
         isFakeBoldText = true
         isAntiAlias = true
@@ -266,7 +286,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int, cardGradient: L
 
     // 绘制轻松语录
     val quotePaint = android.graphics.Paint().apply {
-        color = 0xB3FFFFFF.toInt()
+        color = quoteArgb
         textSize = 12 * density
         isAntiAlias = true
         textAlign = android.graphics.Paint.Align.CENTER
@@ -276,7 +296,7 @@ private fun renderShareBitmap(context: Context, totalCount: Int, cardGradient: L
 
     // 绘制水印
     val watermarkPaint = android.graphics.Paint().apply {
-        color = 0x55B0BEC5
+        color = watermarkArgb
         textSize = 9 * density
         isAntiAlias = true
         textAlign = android.graphics.Paint.Align.CENTER

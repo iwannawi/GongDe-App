@@ -57,12 +57,11 @@ import androidx.compose.ui.unit.sp
 import com.gongde.app.ui.theme.CardBgColor
 import com.gongde.app.ui.theme.CardBorderColor
 import com.gongde.app.ui.theme.GoldColor
+import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.MutedGrayColor
 import kotlinx.coroutines.delay
 
-// 本地专用颜色（呼吸动画背景）
-private val BgDark = Color(0xFF0D0D1A)
-private val BgLight = Color(0xFF1A1A30)
+// 背景色由主题提供（见 composable 内局部变量）
 
 // ==================== 专注状态 ====================
 
@@ -119,9 +118,12 @@ fun FocusScreen(
     // 退出确认对话框
     var showBackConfirm by rememberSaveable { mutableStateOf(false) }
 
-    // 系统返回键：退出确认弹框 → 关闭弹框；无弹框 → 触发退出确认
+    // 系统返回键：退出确认弹框 → 关闭弹框；专注中 → 触发退出确认
     BackHandler(enabled = showBackConfirm) {
         showBackConfirm = false
+    }
+    BackHandler(enabled = !showBackConfirm && state != FocusState.IDLE.name) {
+        showBackConfirm = true
     }
 
     // 专注开始时的累计功德快照（用于展示 "累计 → 累计+N"）
@@ -142,7 +144,9 @@ fun FocusScreen(
     )
 
     // 根据呼吸动画值混合背景色
-    val breathColor = lerpColor(BgDark, BgLight, breathAlpha)
+    val bgDark = GongDeThemeExt.colors.surfaceDark
+    val bgLight = GongDeThemeExt.colors.dialogBg
+    val breathColor = lerpColor(bgDark, bgLight, breathAlpha)
 
     // ─── 倒计时协程 ───
     // 当状态为 RUNNING 且未暂停时，每秒递减倒计时
@@ -222,9 +226,9 @@ fun FocusScreen(
     if (showBackConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showBackConfirm = false },
-            containerColor = Color(0xFF1A1A2E),
+            containerColor = GongDeThemeExt.colors.dialogBg,
             titleContentColor = GoldColor,
-            textContentColor = Color(0xFFB0BEC5),
+            textContentColor = GongDeThemeExt.colors.textSecondary,
             title = { Text("退出专注") },
             text = { Text("专注进行中，已获得 $meritEarned 功德。确定退出吗？") },
             confirmButton = {
@@ -236,7 +240,7 @@ fun FocusScreen(
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { showBackConfirm = false }) {
-                    Text("取消", color = Color(0xFFB0BEC5))
+                    Text("取消", color = GongDeThemeExt.colors.textSecondary)
                 }
             }
         )
@@ -262,6 +266,7 @@ private fun IdleContent(
 ) {
     // 可选的专注时长（分钟）
     val durations = listOf(3, 5, 10, 15, 20)
+    val bgDark = GongDeThemeExt.colors.surfaceDark
 
     Column(
         modifier = Modifier
@@ -350,7 +355,7 @@ private fun IdleContent(
         ) {
             Text(
                 text = "开始",
-                color = BgDark,
+                color = bgDark,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -382,7 +387,7 @@ private fun DurationCard(
                 if (selected) Modifier.border(2.dp, GoldColor, RoundedCornerShape(12.dp))
                 else Modifier.border(1.dp, CardBorderColor, RoundedCornerShape(12.dp))
             )
-            .background(if (selected) Color(0x15FFD54F) else CardBgColor)
+            .background(if (selected) GongDeThemeExt.colors.gold.copy(alpha = 0.08f) else CardBgColor)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

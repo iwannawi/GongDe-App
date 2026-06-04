@@ -4,10 +4,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-/**
- * 统一数据仓库，封装所有数据源访问
- * ViewModel 只通过此类访问数据
- */
 class GongDeRepository(
     private val meritStore: MeritStore,
     private val historyDao: HistoryDao,
@@ -29,7 +25,7 @@ class GongDeRepository(
 
     suspend fun recordMerit(count: Int = 1) {
         val today = LocalDate.now().format(dateFormat)
-        val existing = historyDao.getAll().find { it.date == today }
+        val existing = historyDao.getForDate(today)
         val newCount = (existing?.count ?: 0) + count
         historyDao.upsert(DailyHistory(today, newCount))
     }
@@ -77,7 +73,8 @@ class GongDeRepository(
     fun isUnlocked(id: String) = achievementStore.isUnlocked(id)
 
     suspend fun checkAndUnlock(totalCount: Int, todayCount: Int): List<Achievement> {
-        return achievementStore.checkAndUnlock(totalCount, todayCount)
+        val streak = prefsStore.getStreak()
+        return achievementStore.checkAndUnlock(totalCount, todayCount, streak)
     }
 
     suspend fun updateStreak() {

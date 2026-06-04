@@ -51,8 +51,7 @@ import com.gongde.app.ui.theme.GoldColor
 import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.MutedGrayColor
 
-// 本地专用颜色
-private val BgDark = Color(0xFF0D0D1A)
+// 背景色由主题提供（见 bgDark 局部变量）
 
 /**
  * ASMR 模式主界面
@@ -78,6 +77,7 @@ fun AsmrScreen(
     // 本次会话功德数
     var sessionCount by rememberSaveable { mutableIntStateOf(0) }
     val accent = GongDeThemeExt.colors.accent
+    val bgDark = GongDeThemeExt.colors.surfaceDark
 
     // 白噪音（雨声）开关状态
     var rainEnabled by rememberSaveable { mutableStateOf(false) }
@@ -93,7 +93,7 @@ fun AsmrScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDark)
+            .background(bgDark)
             .windowInsetsPadding(WindowInsets.systemBars)
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -116,7 +116,7 @@ fun AsmrScreen(
         // ===== 页面标题 =====
         Text(
             text = "ASMR 模式",
-            color = Color.White,
+            color = GongDeThemeExt.colors.textPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 3.sp

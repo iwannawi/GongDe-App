@@ -56,6 +56,7 @@ fun MeritCounter(
     modifier: Modifier = Modifier
 ) {
     val accent = GongDeThemeExt.colors.accent
+    val colors = GongDeThemeExt.colors
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -88,8 +89,8 @@ fun MeritCounter(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xDD0D0D24),  // 上方稍亮
-                                Color(0xEE0A0A1A)   // 下方更深
+                                colors.surfaceDark.copy(alpha = 0.87f),
+                                colors.navBarBg
                             )
                         )
                     )
@@ -176,7 +177,7 @@ fun MeritCounter(
                     // 底部提示文案
                     Text(
                         text = "点一下，功德 +1 ✨",
-                        color = Color(0x55B0BEC5),  // 半透明灰色
+                        color = colors.textMuted.copy(alpha = 0.33f),
                         fontSize = 10.sp,
                         letterSpacing = 0.5.sp,
                         modifier = Modifier
@@ -217,7 +218,7 @@ private fun MeritColumn(
         Text(
             text = label,                           // 标签文字
             fontSize = 11.sp,
-            color = Color(0x77B0BEC5),              // 半透明灰色
+            color = GongDeThemeExt.colors.textSecondary.copy(alpha = 0.47f),
             fontWeight = FontWeight.Normal
         )
         Spacer(modifier = Modifier.height(4.dp))

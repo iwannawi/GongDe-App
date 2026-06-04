@@ -20,7 +20,3 @@
 
 # FileProvider
 -keep class androidx.core.content.FileProvider { *; }
-
-# Hilt
--dontwarn dagger.hilt.**
--keep class dagger.hilt.** { *; }

@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gongde.app.ui.theme.GongDeThemeExt
+import com.gongde.app.ui.theme.GoldColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -77,6 +79,7 @@ fun FloatingTextContainer(
 ) {
     // 浮动文字列表，支持动态添加和移除
     val items = remember { mutableStateListOf<FloatingTextItem>() }
+    val gold = GoldColor
 
     // 当触发计数变化时，创建一个新的浮动文字项（上限 15 个，避免快速点击时过多协程）
     LaunchedEffect(triggerCount) {
@@ -147,13 +150,12 @@ fun FloatingTextContainer(
                         }
                         .alpha(item.alpha.value),  // 应用淡出透明度
                     style = TextStyle(
-                        color = Color(0xFFFFD54F),       // 金色文字
+                        color = gold,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        // 文字阴影：增加可读性和发光感
                         shadow = Shadow(
-                            color = Color(0x88000000),
+                            color = Color.Black.copy(alpha = 0.53f),
                             offset = androidx.compose.ui.geometry.Offset(2f, 2f),
                             blurRadius = 4f
                         )

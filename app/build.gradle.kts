@@ -17,17 +17,19 @@ android {
         applicationId = "com.gongde.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.0.0"
+        versionCode = 9
+        versionName = "2.1.0"
     }
 
     signingConfigs {
         create("release") {
             val keystoreProps = Properties()
             val keystoreFile = rootProject.file("keystore.properties")
-            if (keystoreFile.exists()) {
-                keystoreProps.load(keystoreFile.inputStream())
+            require(keystoreFile.exists()) {
+                "keystore.properties not found at ${keystoreFile.absolutePath}. " +
+                "Create it with storeFile, storePassword, keyAlias, keyPassword."
             }
+            keystoreProps.load(keystoreFile.inputStream())
             storeFile = file(keystoreProps.getProperty("storeFile", "${rootProject.projectDir}/release.keystore"))
             storePassword = keystoreProps.getProperty("storePassword", "")
             keyAlias = keystoreProps.getProperty("keyAlias", "gongde")
@@ -48,6 +50,7 @@ android {
     }
 
     // APK 输出命名：GongDe-v2.0.0-20260604.apk
+    @Suppress("DEPRECATION")
     applicationVariants.configureEach {
         val verName = versionName ?: "unknown"
         outputs.configureEach {
