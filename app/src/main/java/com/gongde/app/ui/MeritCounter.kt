@@ -12,6 +12,7 @@ package com.gongde.app.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,11 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
@@ -54,64 +52,17 @@ fun MeritCounter(
     todayCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val accent = GongDeThemeExt.colors.accent
     val colors = GongDeThemeExt.colors
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp)
+            .shadow(2.dp, RoundedCornerShape(16.dp))
+            .background(colors.surfaceOverlay, RoundedCornerShape(16.dp))
+            .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        // 外层边框：accent 渐变
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.sweepGradient(
-                        colors = listOf(
-                            accent.copy(alpha = 0.4f),
-                            colors.cardBorder,
-                            accent.copy(alpha = 0.4f),
-                            colors.cardBorder,
-                            accent.copy(alpha = 0.4f)
-                        )
-                    )
-                )
-                .padding(1.dp)
-        ) {
-            // 内层卡片：与主题一致的背景色
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(19.dp))
-                    .background(colors.cardBg)
-                    .padding(horizontal = 20.dp, vertical = 18.dp)
-            ) {
-                // 顶部电路装饰线：水平渐变线，模拟科技感电路板
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp)
-                        .align(Alignment.TopCenter)
-                ) {
-                    val w = size.width
-                    drawLine(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                accent.copy(alpha = 0.5f),
-                                accent,
-                                accent.copy(alpha = 0.5f),
-                                Color.Transparent
-                            )
-                        ),
-                        start = Offset(0f, 1f),
-                        end = Offset(w, 1f),
-                        strokeWidth = 1.5f
-                    )
-                }
-
-                Column {
+        Column {
                     // 顶部标题标签
                     Text(
                         text = "功德计数",
@@ -134,32 +85,24 @@ fun MeritCounter(
                             label = "累计功德",
                             count = totalCount,
                             accentColor = colors.textPrimary,
-                            icon = { SparkleIcon(colors.accent) },
+                            icon = { SparkleIcon(colors.textPrimary) },
                             modifier = Modifier.weight(1f)
                         )
 
-                        // 中间垂直分割线：渐变消失效果
+                        // 中间垂直分割线
                         Box(
                             modifier = Modifier
                                 .width(1.dp)
                                 .height(50.dp)
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            accent.copy(alpha = 0.33f),
-                                            Color.Transparent
-                                        )
-                                    )
-                                )
+                                .background(colors.cardBorder)
                         )
 
                         // 右列：今日功德数据
                         MeritColumn(
                             label = "今日功德",
                             count = todayCount,
-                            accentColor = accent,        // 蓝色主题
-                            icon = { ClockIcon(accent) }, // 时钟图标
+                            accentColor = colors.textPrimary,
+                            icon = { ClockIcon(colors.textPrimary) }, // 时钟图标
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -175,8 +118,6 @@ fun MeritCounter(
                             .padding(top = 12.dp)
                     )
                 }
-            }
-        }
     }
 }
 

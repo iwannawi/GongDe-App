@@ -39,47 +39,39 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.content.FileProvider
-import com.gongde.app.R
 import com.gongde.app.ui.theme.GongDeThemeExt
 import java.io.FileOutputStream
 import kotlin.random.Random
 
-// 随机背景渐变色组合（明快、欢快色调）
+// 随机背景渐变色组合（中性清新色调）
 private val BG_PALETTES = listOf(
-    listOf(Color(0xFF667eea), Color(0xFF764ba2)),  // 紫蓝梦幻
-    listOf(Color(0xFFf093fb), Color(0xFFf5576c)),  // 粉红浪漫
-    listOf(Color(0xFF4facfe), Color(0xFF00f2fe)),  // 蓝青清爽
-    listOf(Color(0xFF43e97b), Color(0xFF38f9d7)),  // 绿翠生机
-    listOf(Color(0xFFfa709a), Color(0xFFfee140)),  // 粉黄活泼
-    listOf(Color(0xFFa18cd1), Color(0xFFfbc2eb)),  // 淡紫温柔
-    listOf(Color(0xFFfccb90), Color(0xFFd57eeb)),  // 橙紫夕阳
-    listOf(Color(0xFFe0c3fc), Color(0xFF8ec5fc)),  // 紫蓝天空
+    listOf(Color(0xFF7B8FA1), Color(0xFF5A7088)),  // 青灰
+    listOf(Color(0xFF8AAE9B), Color(0xFF6B9080)),  // 灰绿
+    listOf(Color(0xFF9BA4B0), Color(0xFF7A8494)),  // 石板灰
+    listOf(Color(0xFFA09080), Color(0xFF887868)),  // 暖灰
+    listOf(Color(0xFF8899AA), Color(0xFF6B7D8E)),  // 雾蓝
+    listOf(Color(0xFF95A5A6), Color(0xFF7F8C8D)),  // 银灰
 )
 
 @Composable
 fun ShareCardView(
-    totalCount: Int,
+    todayCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val funQuote = remember(totalCount) { getRandomFunQuote() }
+    val funQuote = remember(todayCount) { getRandomFunQuote() }
     val colors = GongDeThemeExt.colors
     val accent = colors.accent
     // 随机选择一个背景色板
-    val palette = remember(totalCount) { BG_PALETTES[Random.nextInt(BG_PALETTES.size)] }
+    val palette = remember(todayCount) { BG_PALETTES[Random.nextInt(BG_PALETTES.size)] }
 
     Box(
         modifier = modifier
@@ -109,20 +101,11 @@ fun ShareCardView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Image(
-                painter = painterResource(R.drawable.keycap_off),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(48.dp, 56.dp).graphicsLayer { alpha = 0.9f }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
-                text = "今日功德 +$totalCount",
+                text = funQuote,
                 style = TextStyle(
                     color = Color.White,
-                    fontSize = 32.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     shadow = Shadow(color = Color.Black.copy(alpha = 0.3f), offset = Offset(2f, 2f), blurRadius = 8f)
@@ -132,13 +115,11 @@ fun ShareCardView(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = funQuote,
+                text = "今日功德 +$todayCount",
                 color = Color.White,
-                fontSize = 15.sp,
-                fontStyle = FontStyle.Italic,
+                fontSize = 18.sp,
                 letterSpacing = 1.sp,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
                 style = TextStyle(
                     shadow = Shadow(color = Color.Black.copy(alpha = 0.2f), offset = Offset(1f, 1f), blurRadius = 4f)
                 )
@@ -158,7 +139,7 @@ fun ShareCardView(
 
 @Composable
 fun ShareButton(
-    totalCount: Int,
+    todayCount: Int,
     context: Context = LocalContext.current,
     modifier: Modifier = Modifier
 ) {
@@ -167,12 +148,12 @@ fun ShareButton(
 
     if (showPreview) {
         SharePreviewDialog(
-            totalCount = totalCount,
+            todayCount = todayCount,
             onDismiss = { showPreview = false },
             onShare = {
                 showPreview = false
                 val accentArgb = colors.accent.toArgb()
-                shareMeritCard(context, totalCount, accentArgb)
+                shareMeritCard(context, todayCount, accentArgb)
             }
         )
     }
@@ -206,7 +187,7 @@ fun ShareButton(
 
 @Composable
 private fun SharePreviewDialog(
-    totalCount: Int,
+    todayCount: Int,
     onDismiss: () -> Unit,
     onShare: () -> Unit
 ) {
@@ -219,7 +200,7 @@ private fun SharePreviewDialog(
             Text("分享预览", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         },
         text = {
-            ShareCardView(totalCount = totalCount)
+            ShareCardView(todayCount = todayCount)
         },
         confirmButton = {
             TextButton(onClick = onShare) {
@@ -236,11 +217,11 @@ private fun SharePreviewDialog(
 
 private fun shareMeritCard(
     context: Context,
-    totalCount: Int,
+    todayCount: Int,
     accentArgb: Int
 ) {
     try {
-        val bitmap = renderShareBitmap(context, totalCount, accentArgb)
+        val bitmap = renderShareBitmap(context, todayCount, accentArgb)
         try {
             val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
             val file = java.io.File(shareDir, "share_merit.png")
@@ -263,7 +244,7 @@ private fun shareMeritCard(
 
 private fun renderShareBitmap(
     context: Context,
-    totalCount: Int,
+    todayCount: Int,
     accentArgb: Int
 ): Bitmap {
     val density = context.resources.displayMetrics.density
@@ -287,15 +268,16 @@ private fun renderShareBitmap(
     val glowPaint2 = Paint().apply { color = android.graphics.Color.argb(15, 255, 255, 255); isAntiAlias = true }
     canvas.drawCircle(w * 0.8f, h * 0.7f, w * 0.4f, glowPaint2)
 
-    // 功德数字
     val whiteArgb = Color.White.toArgb()
-    canvas.drawText("今日功德 +$totalCount", w / 2f, h / 2f, Paint().apply {
-        color = whiteArgb; textSize = 32 * density; isFakeBoldText = true; isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = tf; setShadowLayer(8f * density, 2f * density, 2f * density, android.graphics.Color.argb(76, 0, 0, 0))
+
+    // 语录（大字、居中）
+    canvas.drawText(getRandomFunQuote(), w / 2f, h / 2f - 20 * density, Paint().apply {
+        color = whiteArgb; textSize = 28 * density; isFakeBoldText = true; isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = tf; setShadowLayer(8f * density, 2f * density, 2f * density, android.graphics.Color.argb(76, 0, 0, 0))
     })
 
-    // 语录
-    canvas.drawText(getRandomFunQuote(), w / 2f, h / 2f + 40 * density, Paint().apply {
-        color = android.graphics.Color.argb(230, 255, 255, 255); textSize = 15 * density; isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = tf; setShadowLayer(4f * density, 1f * density, 1f * density, android.graphics.Color.argb(50, 0, 0, 0))
+    // 功德数字（小字）
+    canvas.drawText("今日功德 +$todayCount", w / 2f, h / 2f + 25 * density, Paint().apply {
+        color = whiteArgb; textSize = 18 * density; isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = tf; setShadowLayer(4f * density, 1f * density, 1f * density, android.graphics.Color.argb(50, 0, 0, 0))
     })
 
     // 水印

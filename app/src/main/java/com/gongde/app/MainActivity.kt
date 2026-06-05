@@ -6,7 +6,12 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -19,8 +24,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Diamond
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +42,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -46,6 +55,7 @@ import com.gongde.app.ui.theme.ThemePresets
 import com.gongde.app.viewmodel.GongDeViewModel
 import com.gongde.app.viewmodel.SettingsAction
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val vm: GongDeViewModel by viewModels {
@@ -72,8 +82,8 @@ private data class NavItem(
 )
 
 private val NAV_ITEMS = listOf(
-    NavItem("主页", Icons.Rounded.AutoAwesome, Screen.Home.route),
-    NavItem("成就", Icons.Rounded.Diamond, Screen.Achievements.route),
+    NavItem("主页", Icons.Rounded.Home, Screen.Home.route),
+    NavItem("成就", Icons.Rounded.Star, Screen.Achievements.route),
     NavItem("设置", Icons.Rounded.Tune, Screen.Settings.route)
 )
 
@@ -227,22 +237,31 @@ fun AppContent(
     onNavigate: (String) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        when (currentRoute) {
-            Screen.Focus.route -> FocusScreen(
-                initialTotal = vm.uiState.totalCount,
-                onMeritInc = { vm.incrementStore() },
-                onSync = { vm.syncFromStore() },
-                onBack = { onNavigate(Screen.Home.route) }
-            )
-            Screen.Asmr.route -> AsmrRoute(vm) { onNavigate(Screen.Home.route) }
-            Screen.Achievements.route -> AchievementsScreen(vm)
-            Screen.Settings.route -> SettingsScreen(
-                hapticEnabled = vm.uiState.hapticEnabled,
-                switchType = vm.uiState.switchType.name.lowercase(),
-                themeId = vm.uiState.themeId,
-                onSettingsAction = { vm.handleSettings(it) }
-            )
-            else -> HomeScreen(vm, onNavigate)
+        AnimatedContent(
+            targetState = currentRoute,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(200)) togetherWith
+                    fadeOut(animationSpec = tween(150))
+            },
+            label = "page_transition"
+        ) { route ->
+            when (route) {
+                Screen.Focus.route -> FocusScreen(
+                    initialTotal = vm.uiState.totalCount,
+                    onMeritInc = { vm.incrementStore() },
+                    onSync = { vm.syncFromStore() },
+                    onBack = { onNavigate(Screen.Home.route) }
+                )
+                Screen.Asmr.route -> AsmrRoute(vm) { onNavigate(Screen.Home.route) }
+                Screen.Achievements.route -> AchievementsScreen(vm)
+                Screen.Settings.route -> SettingsScreen(
+                    hapticEnabled = vm.uiState.hapticEnabled,
+                    switchType = vm.uiState.switchType.name.lowercase(),
+                    themeId = vm.uiState.themeId,
+                    onSettingsAction = { vm.handleSettings(it) }
+                )
+                else -> HomeScreen(vm, onNavigate)
+            }
         }
     }
 }
@@ -289,11 +308,11 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            HomeButton("🧘 专注", compact = true, modifier = Modifier.weight(1f)) { onNavigate(Screen.Focus.route) }
+            HomeButton("专注", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow) { onNavigate(Screen.Focus.route) }
             Spacer(Modifier.width(10.dp))
-            HomeButton("清零", compact = true, modifier = Modifier.weight(1f)) { vm.showDialog(true) }
+            HomeButton("清零", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.Refresh) { vm.showDialog(true) }
             Spacer(Modifier.width(10.dp))
-            HomeButton("🎧 ASMR", compact = true, modifier = Modifier.weight(1f)) { onNavigate(Screen.Asmr.route) }
+            HomeButton("ASMR", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.MusicNote) { onNavigate(Screen.Asmr.route) }
         }
 
         Spacer(Modifier.weight(2f))
@@ -347,6 +366,7 @@ fun AchievementsScreen(vm: GongDeViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(16.dp))
                 .clip(RoundedCornerShape(16.dp))
                 .background(colors.cardBg)
                 .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
@@ -355,10 +375,10 @@ fun AchievementsScreen(vm: GongDeViewModel) {
         ) {
             Text("分享", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ShareCardView(totalCount = state.totalCount)
+                ShareCardView(todayCount = state.todayCount)
             }
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ShareButton(totalCount = state.totalCount)
+                ShareButton(todayCount = state.todayCount)
             }
             HorizontalDivider(color = colors.divider, thickness = 1.dp)
             TimelineScreen(
@@ -371,11 +391,20 @@ fun AchievementsScreen(vm: GongDeViewModel) {
 }
 
 @Composable
-fun HomeButton(text: String, compact: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun HomeButton(text: String, compact: Boolean = false, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     val colors = GongDeThemeExt.colors
+    val scope = rememberCoroutineScope()
+    val scale = remember { Animatable(1f) }
+
     OutlinedButton(
-        onClick = onClick,
-        modifier = modifier,
+        onClick = {
+            scope.launch {
+                scale.animateTo(0.92f, tween(60, easing = FastOutSlowInEasing))
+                scale.animateTo(1f, tween(120, easing = FastOutSlowInEasing))
+            }
+            onClick()
+        },
+        modifier = modifier.graphicsLayer(scaleX = scale.value, scaleY = scale.value),
         shape = RoundedCornerShape(if (compact) 14.dp else 20.dp),
         border = BorderStroke(1.dp, colors.cardBorder),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -383,10 +412,14 @@ fun HomeButton(text: String, compact: Boolean = false, modifier: Modifier = Modi
             contentColor = colors.textPrimary
         ),
         contentPadding = PaddingValues(
-            horizontal = if (compact) 16.dp else 28.dp,
+            horizontal = if (compact) 12.dp else 28.dp,
             vertical = if (compact) 8.dp else 14.dp
         )
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(4.dp))
+        }
         Text(text, fontSize = 15.sp)
     }
 }

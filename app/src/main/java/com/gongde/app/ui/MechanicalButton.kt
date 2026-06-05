@@ -28,7 +28,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.pointer.pointerInput
+import android.view.HapticFeedbackConstants
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import android.util.Log
@@ -47,8 +49,9 @@ fun MechanicalButton(
     onPressed: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val pressAnim = remember { Animatable(0f) }   // 0 = 未按下, 1 = 按下到底
+    val pressAnim = remember { Animatable(0f) }
     val scale = remember { Animatable(1f) }
+    val view = LocalView.current
 
     val painterOff = painterResource(R.drawable.keycap_off)
     val painterMid = painterResource(R.drawable.keycap_mid)
@@ -66,6 +69,8 @@ fun MechanicalButton(
                         } else {
                             soundEngine?.playClick(switchType)
                         }
+                        // 使用 View 系统震动（更可靠）+ HapticEngine 兜底
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         if (hapticEnabled) hapticEngine?.tick()
                     } catch (e: Exception) {
                         Log.e("MechanicalButton", "Audio/haptic failed", e)

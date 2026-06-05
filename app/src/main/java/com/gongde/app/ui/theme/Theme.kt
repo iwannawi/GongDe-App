@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 val TextDark = Color(0xFF1A1A1A)
-val TextDarkSecondary = Color(0xFF2A2A2A)
-val TextDarkMuted = Color(0xFF3A3A3A)
+val TextDarkSecondary = Color(0xFF2A2A2A).copy(alpha = 0.92f)
+val TextDarkMuted = Color(0xFF3A3A3A).copy(alpha = 0.88f)
 
 @Immutable
 data class ExtendedColors(

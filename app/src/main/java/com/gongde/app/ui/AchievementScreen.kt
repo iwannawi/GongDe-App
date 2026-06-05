@@ -69,6 +69,7 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
             .background(colors.cardBg)
             .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))

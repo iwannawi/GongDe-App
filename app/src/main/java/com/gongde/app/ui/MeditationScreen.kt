@@ -224,7 +224,7 @@ fun FocusScreen(
             onDismissRequest = { showBackConfirm = false },
             containerColor = GongDeThemeExt.colors.dialogBg,
             titleContentColor = Color.White,
-            textContentColor = GongDeThemeExt.colors.textSecondary,
+            textContentColor = GongDeThemeExt.colors.textPrimary,
             title = { Text("退出专注") },
             text = { Text("专注进行中，已获得 $meritEarned 功德。确定退出吗？") },
             confirmButton = {
@@ -236,7 +236,7 @@ fun FocusScreen(
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { showBackConfirm = false }) {
-                    Text("取消", color = GongDeThemeExt.colors.textSecondary)
+                    Text("取消", color = GongDeThemeExt.colors.textPrimary)
                 }
             }
         )
@@ -281,7 +281,7 @@ private fun IdleContent(
                 onClick = onBack,
                 modifier = Modifier.padding(8.dp)
             ) {
-                Text("← 返回", color = GongDeThemeExt.colors.textMuted, fontSize = 18.sp)
+                Text("← 返回", color = Color.White.copy(alpha = 0.7f), fontSize = 18.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -302,7 +302,7 @@ private fun IdleContent(
         // 副标题说明
         Text(
             text = "放松身心，每3秒自动攒功德",
-            color = GongDeThemeExt.colors.textMuted,
+            color = Color.White.copy(alpha = 0.7f),
             fontSize = 15.sp
         )
 
@@ -396,7 +396,7 @@ private fun DurationCard(
             )
             Text(
                 text = "分钟",
-                color = if (selected) GongDeThemeExt.colors.accent else GongDeThemeExt.colors.textMuted,
+                color = if (selected) GongDeThemeExt.colors.accent else Color.White.copy(alpha = 0.7f),
                 fontSize = 15.sp
             )
         }
@@ -440,7 +440,7 @@ private fun RunningContent(
                 onClick = onBack,
                 modifier = Modifier.padding(8.dp)
             ) {
-                Text("← 返回", color = GongDeThemeExt.colors.textMuted, fontSize = 18.sp)
+                Text("← 返回", color = Color.White.copy(alpha = 0.7f), fontSize = 18.sp)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -489,7 +489,7 @@ private fun RunningContent(
         Spacer(Modifier.height(4.dp))
         Text(
             text = "累计: $baseTotal → ${baseTotal + meritEarned}",
-            color = GongDeThemeExt.colors.textMuted,
+            color = Color.White.copy(alpha = 0.7f),
             fontSize = 15.sp,
             letterSpacing = 1.sp
         )
@@ -558,7 +558,7 @@ private fun FinishedContent(
         // 时长统计（格式化为 MM:SS）
         Text(
             text = "专注时长 ${formatTime(elapsedSeconds)}",
-            color = GongDeThemeExt.colors.textMuted,
+            color = Color.White.copy(alpha = 0.7f),
             fontSize = 15.sp,
             letterSpacing = 2.sp
         )
