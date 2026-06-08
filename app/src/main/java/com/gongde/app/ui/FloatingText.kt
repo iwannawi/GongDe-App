@@ -143,7 +143,7 @@ fun FloatingTextContainer(
                         .offset {
                             IntOffset(
                                 x = item.xDrift.dp.roundToPx(),   // 水平随机偏移
-                                y = 500.dp.roundToPx() + item.y.value.dp.roundToPx()  // 从键盘位置向上飘
+                                y = 420.dp.roundToPx() + item.y.value.dp.roundToPx()  // 从键盘位置向上飘
                             )
                         }
                         .alpha(item.alpha.value),  // 应用淡出透明度

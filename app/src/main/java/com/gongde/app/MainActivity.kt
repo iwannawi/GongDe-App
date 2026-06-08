@@ -310,7 +310,7 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
         ) {
             HomeButton("专注", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow) { onNavigate(Screen.Focus.route) }
             Spacer(Modifier.width(10.dp))
-            HomeButton("清零", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.Refresh) { vm.showDialog(true) }
+            HomeButton("归零", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.Refresh) { vm.showDialog(true) }
             Spacer(Modifier.width(10.dp))
             HomeButton("ASMR", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.MusicNote) { onNavigate(Screen.Asmr.route) }
         }
@@ -340,10 +340,10 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
             containerColor = colors.dialogBg,
             titleContentColor = colors.textPrimary,
             textContentColor = colors.textSecondary,
-            title = { Text("确认清零") },
-            text = { Text("累计功德和今日功德都将归零，确定吗？\n成就和历史记录将保留。") },
-            confirmButton = { TextButton(onClick = { vm.resetMerit() }) { Text("确定", color = colors.textPrimary) } },
-            dismissButton = { TextButton(onClick = { vm.showDialog(false) }) { Text("取消", color = colors.textSecondary) } }
+            title = { Text("确认归零", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary) },
+            text = { Text("累计功德和今日功德都将归零，确定吗？\n成就和历史记录将保留。", fontSize = 15.sp, color = colors.textSecondary) },
+            confirmButton = { TextButton(onClick = { vm.resetMerit() }) { Text("确定", color = colors.accent, fontSize = 15.sp, fontWeight = FontWeight.Bold) } },
+            dismissButton = { TextButton(onClick = { vm.showDialog(false) }) { Text("取消", color = colors.textSecondary, fontSize = 15.sp) } }
         )
     }
 }
@@ -352,7 +352,6 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
 fun AchievementsScreen(vm: GongDeViewModel) {
     val state = vm.uiState
     val colors = GongDeThemeExt.colors
-
     Column(
         Modifier
             .fillMaxSize()
@@ -362,7 +361,7 @@ fun AchievementsScreen(vm: GongDeViewModel) {
     ) {
         AchievementScreen(store = vm.achievementStore, weekTotal = state.weekTotal, monthTotal = state.monthTotal)
 
-        // 板块：分享 + 时间线
+        // 板块：分享
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -371,16 +370,29 @@ fun AchievementsScreen(vm: GongDeViewModel) {
                 .background(colors.cardBg)
                 .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("分享", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ShareCardView(todayCount = state.todayCount)
-            }
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                ShareButton(todayCount = state.todayCount)
-            }
-            HorizontalDivider(color = colors.divider, thickness = 1.dp)
+            Text("分享", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colors.accent.copy(alpha = 0.1f))
+                    .padding(vertical = 8.dp)
+                    .wrapContentWidth(Alignment.CenterHorizontally))
+            Spacer(Modifier.height(12.dp))
+            ShareButton(todayCount = state.todayCount)
+        }
+
+        // 板块：功德日历
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.cardBg)
+                .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
+                .padding(16.dp)
+        ) {
             TimelineScreen(
                 entries = state.recentDays,
                 weekTotal = state.weekTotal,

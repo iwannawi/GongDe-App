@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.data.Achievement
@@ -47,13 +48,22 @@ fun AchievementScreen(
 
         // 板块 2：成就卡片列表
         SectionCard {
-            Text(
-                text = "成就",
-                color = colors.textPrimary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colors.accent.copy(alpha = 0.1f))
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "成就",
+                    color = colors.textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.height(12.dp))
             achievements.forEach { achievement ->
                 val unlocked = store.isUnlocked(achievement.id)
                 AchievementCard(achievement, unlocked)
@@ -74,6 +84,7 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
             .background(colors.cardBg)
             .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
             .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         content = content
     )
 }
@@ -94,7 +105,7 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
     val nameAlpha = if (unlocked) 1f else 0.5f
     val iconAlpha = if (unlocked) 1f else 0.35f
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .then(
@@ -104,14 +115,14 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
             )
             .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
             .background(colors.cardBg, RoundedCornerShape(12.dp))
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(14.dp)
     ) {
+        // 图标（左上角）
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .align(Alignment.TopStart)
+                .size(40.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(
                     if (unlocked) colors.accent.copy(alpha = 0.15f)
                     else colors.barTrack.copy(alpha = 0.5f)
@@ -120,24 +131,30 @@ private fun AchievementCard(achievement: Achievement, unlocked: Boolean) {
         ) {
             Text(
                 text = achievement.icon,
-                fontSize = 24.sp,
+                fontSize = 20.sp,
                 modifier = Modifier.graphicsLayer { alpha = iconAlpha }
             )
         }
 
-        Column(modifier = Modifier.weight(1f)) {
+        // 文字（全宽居中）
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
                 text = achievement.name,
-                color = colors.textPrimary,
+                color = colors.textPrimary.copy(alpha = nameAlpha),
                 fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = achievement.description,
-                color = colors.textMuted,
+                color = colors.textMuted.copy(alpha = nameAlpha),
                 fontSize = 15.sp,
-                maxLines = 2
+                maxLines = 2,
+                textAlign = TextAlign.Center
             )
         }
     }

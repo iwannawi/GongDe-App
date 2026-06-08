@@ -18,12 +18,14 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,10 +33,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -139,9 +147,9 @@ fun FocusScreen(
         label = "breathAlpha"
     )
 
-    // 根据呼吸动画值混合背景色
-    val bgDark = GongDeThemeExt.colors.surfaceDark
-    val bgLight = GongDeThemeExt.colors.dialogBg
+    // 根据呼吸动画值混合背景色（中等深度，不过暗也不过亮）
+    val bgDark = Color(0xFF2A2E3A)
+    val bgLight = Color(0xFF3A3E4A)
     val breathColor = lerpColor(bgDark, bgLight, breathAlpha)
 
     // ─── 倒计时协程 ───
@@ -223,20 +231,20 @@ fun FocusScreen(
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showBackConfirm = false },
             containerColor = GongDeThemeExt.colors.dialogBg,
-            titleContentColor = Color.White,
-            textContentColor = GongDeThemeExt.colors.textPrimary,
-            title = { Text("退出专注") },
-            text = { Text("专注进行中，已获得 $meritEarned 功德。确定退出吗？") },
+            titleContentColor = GongDeThemeExt.colors.textPrimary,
+            textContentColor = GongDeThemeExt.colors.textSecondary,
+            title = { Text("退出专注", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GongDeThemeExt.colors.textPrimary) },
+            text = { Text("专注进行中，已获得 $meritEarned 功德。确定退出吗？", fontSize = 15.sp, color = GongDeThemeExt.colors.textSecondary) },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     showBackConfirm = false
                     if (!hasSynced) { hasSynced = true; onSync() }
                     onBack()
-                }) { Text("确定", color = Color.White) }
+                }) { Text("确定退出", color = GongDeThemeExt.colors.accent, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { showBackConfirm = false }) {
-                    Text("取消", color = GongDeThemeExt.colors.textPrimary)
+                    Text("取消", color = GongDeThemeExt.colors.textSecondary, fontSize = 15.sp)
                 }
             }
         )
@@ -262,7 +270,7 @@ private fun IdleContent(
 ) {
     // 可选的专注时长（分钟）
     val durations = listOf(3, 5, 10, 15, 20)
-    val bgDark = GongDeThemeExt.colors.surfaceDark
+    val bgDark = Color(0xFF2A2E3A)
 
     Column(
         modifier = Modifier
@@ -275,13 +283,20 @@ private fun IdleContent(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // "返回" 文本按钮
-            // "返回" 按钮（增大触摸区域）
-            TextButton(
+            // "返回" 按钮
+            OutlinedButton(
                 onClick = onBack,
-                modifier = Modifier.padding(8.dp)
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = GongDeThemeExt.colors.accent
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text("← 返回", color = Color.White.copy(alpha = 0.7f), fontSize = 18.sp)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("返回", fontSize = 15.sp, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -351,7 +366,7 @@ private fun IdleContent(
         ) {
             Text(
                 text = "开始",
-                color = bgDark,
+                color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -383,20 +398,20 @@ private fun DurationCard(
                 if (selected) Modifier.border(2.dp, GongDeThemeExt.colors.accent, RoundedCornerShape(12.dp))
                 else Modifier.border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(12.dp))
             )
-            .background(if (selected) GongDeThemeExt.colors.accent.copy(alpha = 0.08f) else GongDeThemeExt.colors.cardBg)
+            .background(if (selected) GongDeThemeExt.colors.accent.copy(alpha = 0.2f) else GongDeThemeExt.colors.cardBg)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "$minutes",
-                color = if (selected) GongDeThemeExt.colors.accent else Color.White,
+                color = if (selected) Color.White else GongDeThemeExt.colors.textSecondary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = "分钟",
-                color = if (selected) GongDeThemeExt.colors.accent else Color.White.copy(alpha = 0.7f),
+                color = if (selected) Color.White.copy(alpha = 0.8f) else GongDeThemeExt.colors.textSecondary.copy(alpha = 0.7f),
                 fontSize = 15.sp
             )
         }
@@ -435,12 +450,20 @@ private fun RunningContent(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // "返回" 按钮（增大触摸区域）
-            TextButton(
+            // "返回" 按钮
+            OutlinedButton(
                 onClick = onBack,
-                modifier = Modifier.padding(8.dp)
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = GongDeThemeExt.colors.accent
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text("← 返回", color = Color.White.copy(alpha = 0.7f), fontSize = 18.sp)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("返回", fontSize = 15.sp, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -566,22 +589,19 @@ private fun FinishedContent(
         Spacer(modifier = Modifier.height(48.dp))
 
         // "返回" 按钮
-        Box(
-            modifier = Modifier
-                .width(160.dp)
-                .height(52.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(1.5.dp, Color.White, RoundedCornerShape(16.dp))
-                .background(Color.Transparent)
-                .clickable { onBack() },
-            contentAlignment = Alignment.Center
+        OutlinedButton(
+            onClick = onBack,
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = GongDeThemeExt.colors.accent
+            ),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = "返回",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(4.dp))
+            Text("返回", fontSize = 15.sp, fontWeight = FontWeight.Medium)
         }
     }
 }

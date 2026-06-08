@@ -69,9 +69,9 @@ fun MechanicalButton(
                         } else {
                             soundEngine?.playClick(switchType)
                         }
-                        // 使用 View 系统震动（更可靠）+ HapticEngine 兜底
+                        // 主键盘始终触发震动（不受 hapticEnabled 控制）
                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                        if (hapticEnabled) hapticEngine?.tick()
+                        hapticEngine?.tick()
                     } catch (e: Exception) {
                         Log.e("MechanicalButton", "Audio/haptic failed", e)
                     }

@@ -11,12 +11,14 @@
 
 package com.gongde.app.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -24,10 +26,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -99,12 +107,20 @@ fun AsmrScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // "返回" 文本按钮
-            TextButton(
+            // "返回" 按钮
+            OutlinedButton(
                 onClick = onBack,
-                modifier = Modifier.padding(8.dp)
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = GongDeThemeExt.colors.accent
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text("← 返回", color = GongDeThemeExt.colors.textMuted, fontSize = 18.sp)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("返回", fontSize = 15.sp, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -141,15 +157,11 @@ fun AsmrScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(2f))
 
-        // ===== 大尺寸 ASMR 按钮（居中） =====
-        // 使用 MechanicalButton，尺寸放大到 fillMaxWidth x 350.dp
-        // asmrMode = true 时按钮内部自动使用 ASMR 增强音效
+        // ===== ASMR 按钮（与首页键盘位置一致） =====
         MechanicalButton(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(350.dp),
+            modifier = Modifier.size(220.dp, 250.dp),
             soundEngine = soundEngine,
             hapticEngine = hapticEngine,
             hapticEnabled = hapticEnabled,
