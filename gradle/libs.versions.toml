@@ -9,6 +9,7 @@ navigationCompose = "2.8.5"
 datastorePreferences = "1.1.1"
 room = "2.7.1"
 lifecycle = "2.8.7"
+desugarJdkLibs = "2.1.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,7 @@ androidx-test-core = { group = "androidx.test", name = "core", version = "1.6.1"
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version = "1.9.0" }
 junit = { group = "junit", name = "junit", version = "4.13.2" }
 robolectric = { group = "org.robolectric", name = "robolectric", version = "4.14.1" }
+desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

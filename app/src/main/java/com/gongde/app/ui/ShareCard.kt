@@ -6,8 +6,13 @@ import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,9 +53,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.util.Log
-import androidx.compose.foundation.Canvas
 import androidx.core.content.FileProvider
+import androidx.core.graphics.createBitmap
 import com.gongde.app.ui.theme.GongDeThemeExt
 import java.io.FileOutputStream
 import kotlin.random.Random
@@ -66,96 +70,10 @@ private val BG_PALETTES = listOf(
 )
 
 @Composable
-fun ShareCardView(
-    todayCount: Int,
-    modifier: Modifier = Modifier,
-    refreshKey: Int = 0
-) {
-    val funQuote = remember(todayCount, refreshKey) { getRandomFunQuote() }
-    val colors = GongDeThemeExt.colors
-    val accent = colors.accent
-    // 随机选择一个背景色板
-    val palette = remember(todayCount, refreshKey) { BG_PALETTES[Random.nextInt(BG_PALETTES.size)] }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(3f / 4f)
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(palette)),
-        contentAlignment = Alignment.Center
-    ) {
-        // 装饰性柔和光斑 + 更多活泼小圆
-        Canvas(modifier = Modifier.matchParentSize()) {
-            val w = size.width
-            val h = size.height
-            // 大柔光圆
-            drawCircle(Color.White.copy(alpha = 0.08f), w * 0.5f, Offset(w * 0.2f, h * 0.3f))
-            drawCircle(Color.White.copy(alpha = 0.06f), w * 0.4f, Offset(w * 0.8f, h * 0.7f))
-            drawCircle(Color.White.copy(alpha = 0.1f), w * 0.25f, Offset(w * 0.6f, h * 0.15f))
-            // 额外装饰柔光圆
-            drawCircle(Color.White.copy(alpha = 0.05f), w * 0.35f, Offset(w * 0.1f, h * 0.8f))
-            drawCircle(Color.White.copy(alpha = 0.07f), w * 0.3f, Offset(w * 0.9f, h * 0.2f))
-            drawCircle(Color.White.copy(alpha = 0.04f), w * 0.45f, Offset(w * 0.5f, h * 0.9f))
-            // 小亮点
-            drawCircle(Color.White.copy(alpha = 0.3f), 3f, Offset(w * 0.15f, h * 0.2f))
-            drawCircle(Color.White.copy(alpha = 0.25f), 2f, Offset(w * 0.85f, h * 0.3f))
-            drawCircle(Color.White.copy(alpha = 0.2f), 2.5f, Offset(w * 0.3f, h * 0.8f))
-            drawCircle(Color.White.copy(alpha = 0.3f), 2f, Offset(w * 0.7f, h * 0.85f))
-            // 额外活泼小亮点
-            drawCircle(Color.White.copy(alpha = 0.35f), 2f, Offset(w * 0.45f, h * 0.1f))
-            drawCircle(Color.White.copy(alpha = 0.2f), 1.5f, Offset(w * 0.05f, h * 0.5f))
-            drawCircle(Color.White.copy(alpha = 0.25f), 2f, Offset(w * 0.95f, h * 0.55f))
-            drawCircle(Color.White.copy(alpha = 0.15f), 1.5f, Offset(w * 0.6f, h * 0.65f))
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = funQuote,
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontStyle = FontStyle.Italic,
-                    textAlign = TextAlign.Center,
-                    shadow = Shadow(color = Color.Black.copy(alpha = 0.3f), offset = Offset(2f, 2f), blurRadius = 8f)
-                )
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "今日功德 +$todayCount",
-                color = Color.White,
-                fontSize = 13.sp,
-                letterSpacing = 1.sp,
-                textAlign = TextAlign.Center,
-                style = TextStyle(
-                    shadow = Shadow(color = Color.Black.copy(alpha = 0.2f), offset = Offset(1f, 1f), blurRadius = 4f)
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "解压键盘 · 功德+1",
-                color = Color.White,
-                fontSize = 15.sp,
-                letterSpacing = 2.sp
-            )
-        }
-    }
-}
-
-@Composable
 fun ShareButton(
     todayCount: Int,
-    context: Context = LocalContext.current,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    context: Context = LocalContext.current
 ) {
     var showPreview by remember { mutableStateOf(false) }
     val colors = GongDeThemeExt.colors
@@ -180,10 +98,9 @@ fun ShareButton(
                 refreshContent()
             },
             onShare = {
+                shareMeritCard(context, todayCount, currentQuote, currentPalette)
                 showPreview = false
                 refreshContent()
-                val accentArgb = colors.accent.toArgb()
-                shareMeritCard(context, todayCount, accentArgb, currentQuote, currentPalette)
             }
         )
     }
@@ -234,8 +151,6 @@ private fun ShareCardViewWithContent(
     palette: List<Color>,
     modifier: Modifier = Modifier
 ) {
-    val colors = GongDeThemeExt.colors
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -316,12 +231,11 @@ private fun SharePreviewDialogWithContent(
 private fun shareMeritCard(
     context: Context,
     todayCount: Int,
-    accentArgb: Int,
     quote: String,
     palette: List<Color>
 ) {
     try {
-        val bitmap = renderShareBitmap(context, todayCount, accentArgb, quote, palette)
+        val bitmap = renderShareBitmap(context, todayCount, quote, palette)
         try {
             val shareDir = java.io.File(context.cacheDir, "share").also { it.mkdirs() }
             val file = java.io.File(shareDir, "share_merit.png")
@@ -345,14 +259,13 @@ private fun shareMeritCard(
 private fun renderShareBitmap(
     context: Context,
     todayCount: Int,
-    accentArgb: Int,
     quote: String,
     palette: List<Color>
 ): Bitmap {
     val density = context.resources.displayMetrics.density
     val w = (300 * density).toInt()
-    val h = (260 * density).toInt()
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val h = (400 * density).toInt()
+    val bitmap = createBitmap(w, h)
     val canvas = AndroidCanvas(bitmap)
     val tf = Typeface.DEFAULT
 
@@ -370,10 +283,29 @@ private fun renderShareBitmap(
 
     val whiteArgb = Color.White.toArgb()
 
-    // 语录（大字、居中）
-    canvas.drawText(quote, w / 2f, h / 2f - 20 * density, Paint().apply {
-        color = whiteArgb; textSize = 28 * density; isFakeBoldText = true; isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = tf; setShadowLayer(8f * density, 2f * density, 2f * density, android.graphics.Color.argb(76, 0, 0, 0))
-    })
+    // 语录（大字、居中，长文案自动换行）
+    val quotePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = whiteArgb
+        textSize = 26 * density
+        isFakeBoldText = true
+        textAlign = Paint.Align.CENTER
+        typeface = tf
+        setShadowLayer(
+            8f * density,
+            2f * density,
+            2f * density,
+            android.graphics.Color.argb(76, 0, 0, 0)
+        )
+    }
+    drawCenteredStaticText(
+        canvas = canvas,
+        text = quote,
+        paint = quotePaint,
+        centerX = w / 2f,
+        centerY = h / 2f - 28 * density,
+        width = (w - 56 * density).toInt(),
+        maxLines = 3
+    )
 
     // 功德数字（小字）
     canvas.drawText("今日功德 +$todayCount", w / 2f, h / 2f + 25 * density, Paint().apply {
@@ -386,4 +318,26 @@ private fun renderShareBitmap(
     })
 
     return bitmap
+}
+
+private fun drawCenteredStaticText(
+    canvas: AndroidCanvas,
+    text: String,
+    paint: TextPaint,
+    centerX: Float,
+    centerY: Float,
+    width: Int,
+    maxLines: Int
+) {
+    val layout = StaticLayout.Builder
+        .obtain(text, 0, text.length, paint, width)
+        .setAlignment(Layout.Alignment.ALIGN_CENTER)
+        .setIncludePad(false)
+        .setMaxLines(maxLines)
+        .build()
+
+    canvas.save()
+    canvas.translate(centerX - width / 2f, centerY - layout.height / 2f)
+    layout.draw(canvas)
+    canvas.restore()
 }

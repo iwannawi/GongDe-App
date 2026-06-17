@@ -25,7 +25,7 @@ class HapticEngine(context: Context) {
     }
 
     /**
-     * 短促点击触觉反馈（20ms，振幅 128）
+     * 短促点击触觉反馈（45ms，最大可用振幅）
      *
      * 适用于按键触发、段落感模拟等场景。
      * 仅在设备支持振动器时执行。
@@ -36,10 +36,10 @@ class HapticEngine(context: Context) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val amplitude = if (v.hasAmplitudeControl()) 255 else VibrationEffect.DEFAULT_AMPLITUDE
-            v.vibrate(VibrationEffect.createOneShot(30, amplitude))
+            v.vibrate(VibrationEffect.createOneShot(45, amplitude))
         } else {
             @Suppress("DEPRECATION")
-            v.vibrate(30)
+            v.vibrate(45)
         }
     }
 

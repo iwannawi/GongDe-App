@@ -1,7 +1,6 @@
 package com.gongde.app.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,17 +14,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.gongde.app.ui.theme.GongDeThemeExt
+import java.util.Locale
 
 private val LcdBg = Color(0x881A1A2E)
-private val LcdBorder = Color(0x664FC3F7)
 private val LcdGlow = Color(0xFF4FC3F7)
 private val LcdText = Color(0xFF00FFCC)
 
@@ -35,8 +32,6 @@ fun MeritCounter(
     todayCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val colors = GongDeThemeExt.colors
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -143,7 +138,7 @@ private fun MeritColumn(
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = String.format("%,d", count),
+            text = String.format(Locale.getDefault(), "%,d", count),
             fontSize = 28.sp,
             color = LcdText,
             fontWeight = FontWeight.Bold,

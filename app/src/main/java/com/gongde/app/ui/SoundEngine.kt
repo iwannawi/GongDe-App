@@ -196,8 +196,21 @@ class SoundEngine {
      */
     fun stopRain() {
         isRaining = false
-        rainThread?.join(1000)
-        rainThread = null
+        rainTrack?.let { track ->
+            try { track.pause() } catch (_: IllegalStateException) { }
+            try { track.flush() } catch (_: IllegalStateException) { }
+        }
+        val thread = rainThread
+        if (thread != null && thread !== Thread.currentThread()) {
+            try {
+                thread.join(150)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
+        }
+        if (rainThread?.isAlive != true) {
+            rainThread = null
+        }
     }
 
     /**

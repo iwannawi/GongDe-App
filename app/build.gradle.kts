@@ -17,8 +17,8 @@ android {
         applicationId = "com.gongde.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.4.1"
+        versionCode = 14
+        versionName = "2.4.2"
     }
 
     signingConfigs {
@@ -62,6 +62,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -87,6 +88,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
