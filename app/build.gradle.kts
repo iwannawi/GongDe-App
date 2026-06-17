@@ -17,8 +17,8 @@ android {
         applicationId = "com.gongde.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 12
-        versionName = "2.4.0"
+        versionCode = 13
+        versionName = "2.4.1"
     }
 
     signingConfigs {
