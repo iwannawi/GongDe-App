@@ -139,7 +139,19 @@ class GongDeViewModel(
         val snapToday = repo.todayCount
         _uiState = _uiState.copy(totalCount = snapTotal, todayCount = snapToday)
         viewModelScope.launch(Dispatchers.IO) {
-            repo.checkAndUnlock(snapTotal, snapToday)
+            repo.updateStreak()
+            achievementMutex.lock()
+            try {
+                val unlocked = repo.checkAndUnlock(snapTotal, snapToday)
+                if (unlocked.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        val messages = unlocked.map { a -> "🏆 成就解锁：${a.name}" }
+                        _uiState = _uiState.copy(toastEvents = _uiState.toastEvents + messages)
+                    }
+                }
+            } finally {
+                achievementMutex.unlock()
+            }
             refreshStats()
         }
     }

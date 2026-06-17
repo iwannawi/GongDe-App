@@ -11,6 +11,12 @@ interface HistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entry: DailyHistory)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnore(entry: DailyHistory): Long
+
+    @Query("UPDATE daily_history SET count = count + :count WHERE date = :date")
+    suspend fun incrementCount(date: String, count: Int): Int
+
     @Query("SELECT * FROM daily_history WHERE date = :date LIMIT 1")
     suspend fun getForDate(date: String): DailyHistory?
 

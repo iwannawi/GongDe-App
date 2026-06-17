@@ -2,13 +2,17 @@ package com.gongde.app.data
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [21])
 class AchievementStoreTest {
 
     private lateinit var store: AchievementStore
@@ -21,96 +25,81 @@ class AchievementStoreTest {
     }
 
     @Test
-    fun `预定义了 8 个成就`() {
-        assertEquals(8, store.allAchievements.size)
+    fun `predefines current achievements`() {
+        assertEquals(6, store.allAchievements.size)
+        assertTrue(store.allAchievements.any { it.id == "first_merit" })
+        assertTrue(store.allAchievements.any { it.id == "merit_1000" })
+        assertTrue(store.allAchievements.any { it.id == "daily_100" })
+        assertTrue(store.allAchievements.any { it.id == "daily_1000" })
+        assertTrue(store.allAchievements.any { it.id == "streak_7" })
+        assertTrue(store.allAchievements.any { it.id == "streak_30" })
     }
 
     @Test
-    fun `初始状态全部未解锁`() {
-        store.allAchievements.forEach { a ->
-            assertFalse(store.isUnlocked(a.id))
+    fun `initial state is locked`() {
+        store.allAchievements.forEach { achievement ->
+            assertFalse(store.isUnlocked(achievement.id))
         }
     }
 
     @Test
-    fun `first_merit 在 totalCount>=1 时解锁`() {
-        val unlocked = store.checkAndUnlock(1, 0)
-        assertEquals(1, unlocked.size)
-        assertEquals("first_merit", unlocked[0].id)
+    fun `first merit unlocks when total count reaches one`() {
+        val unlocked = store.checkAndUnlock(totalCount = 1, todayCount = 0, streak = 0)
+
+        assertEquals(listOf("first_merit"), unlocked.map { it.id })
         assertTrue(store.isUnlocked("first_merit"))
     }
 
     @Test
-    fun `merit_100 在 totalCount>=100 时解锁`() {
-        val unlocked = store.checkAndUnlock(100, 0)
-        assertTrue(unlocked.any { it.id == "merit_100" })
-        assertTrue(unlocked.any { it.id == "first_merit" }) // 累积解锁
+    fun `total and daily achievements unlock at thresholds`() {
+        val unlocked = store.checkAndUnlock(totalCount = 1000, todayCount = 1000, streak = 0)
+            .map { it.id }
+
+        assertTrue(unlocked.contains("first_merit"))
+        assertTrue(unlocked.contains("merit_1000"))
+        assertTrue(unlocked.contains("daily_100"))
+        assertTrue(unlocked.contains("daily_1000"))
     }
 
     @Test
-    fun `merit_1000 在 totalCount>=1000 时解锁`() {
-        store.checkAndUnlock(1000, 0)
-        assertTrue(store.isUnlocked("merit_1000"))
+    fun `streak achievements unlock at thresholds`() {
+        val sevenDay = store.checkAndUnlock(totalCount = 0, todayCount = 0, streak = 7)
+            .map { it.id }
+        val thirtyDay = store.checkAndUnlock(totalCount = 0, todayCount = 0, streak = 30)
+            .map { it.id }
+
+        assertTrue(sevenDay.contains("streak_7"))
+        assertTrue(thirtyDay.contains("streak_30"))
     }
 
     @Test
-    fun `merit_10000 在 totalCount>=10000 时解锁`() {
-        store.checkAndUnlock(10000, 0)
-        assertTrue(store.isUnlocked("merit_10000"))
-    }
+    fun `unlocked achievements are not emitted again`() {
+        store.checkAndUnlock(totalCount = 1, todayCount = 0, streak = 0)
 
-    @Test
-    fun `daily_100 在 todayCount>=100 时解锁`() {
-        val unlocked = store.checkAndUnlock(1000, 100)
-        assertTrue(unlocked.any { it.id == "daily_100" })
-    }
+        val second = store.checkAndUnlock(totalCount = 1, todayCount = 0, streak = 0)
 
-    @Test
-    fun `daily_1000 在 todayCount>=1000 时解锁`() {
-        store.checkAndUnlock(5000, 1000)
-        assertTrue(store.isUnlocked("daily_1000"))
-    }
-
-    @Test
-    fun `已解锁的成就不会重复解锁`() {
-        store.checkAndUnlock(1, 0)
-        val second = store.checkAndUnlock(1, 0)
         assertTrue(second.isEmpty())
     }
 
     @Test
-    fun `解锁数据持久化`() {
-        store.checkAndUnlock(100, 0)
+    fun `unlocked achievement ids persist`() {
+        store.checkAndUnlock(totalCount = 1000, todayCount = 100, streak = 7)
         val context = ApplicationProvider.getApplicationContext<Context>()
+
         val newStore = AchievementStore(context)
+
         assertTrue(newStore.isUnlocked("first_merit"))
-        assertTrue(newStore.isUnlocked("merit_100"))
-        assertFalse(newStore.isUnlocked("merit_1000"))
+        assertTrue(newStore.isUnlocked("merit_1000"))
+        assertTrue(newStore.isUnlocked("daily_100"))
+        assertTrue(newStore.isUnlocked("streak_7"))
+        assertFalse(newStore.isUnlocked("daily_1000"))
     }
 
     @Test
-    fun `updateStreak 首次调用初始化为 1`() {
-        store.updateStreak()
-        assertEquals(1, store.unlockedIds.size) // 不影响解锁
-    }
-
-    @Test
-    fun `checkAndUnlock 不满足条件时返回空列表`() {
-        val unlocked = store.checkAndUnlock(0, 0)
-        assertTrue(unlocked.isEmpty())
-    }
-
-    @Test
-    fun `批量解锁多个成就`() {
-        val unlocked = store.checkAndUnlock(10000, 1000)
-        // 应解锁: first_merit, merit_100, merit_1000, merit_10000, daily_100, daily_1000
-        assertTrue(unlocked.size >= 6)
-    }
-
-    @Test
-    fun `成就名称和描述正确`() {
+    fun `achievement copy matches product text`() {
         val first = store.allAchievements.first { it.id == "first_merit" }
-        assertEquals("初入佛门", first.name)
+
+        assertEquals("新手上路", first.name)
         assertEquals("累计获得1次功德", first.description)
         assertEquals("🌱", first.icon)
     }

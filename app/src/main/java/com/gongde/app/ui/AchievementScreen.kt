@@ -10,8 +10,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,14 +37,26 @@ fun AchievementScreen(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // 板块 1：本周/本月功德统计
-        SectionCard {
+        // 板块 1：本周/本月功德统计（LCD 风格）
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(listOf(Color(0x881A1A2E), Color(0x8812121F))),
+                    RoundedCornerShape(14.dp)
+                )
+                .padding(vertical = 16.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatBadge(label = "本周功德", value = weekTotal, color = colors.textPrimary)
-                StatBadge(label = "本月功德", value = monthTotal, color = colors.accent)
+                LcdStatBadge(label = "本周功德", value = weekTotal)
+                Box(
+                    modifier = Modifier.width(1.dp).height(40.dp)
+                        .background(Color(0xFF4FC3F7).copy(alpha = 0.2f))
+                )
+                LcdStatBadge(label = "本月功德", value = monthTotal)
             }
         }
 
@@ -95,6 +109,28 @@ private fun StatBadge(label: String, value: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "$value", color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(text = label, color = colors.textSecondary, fontSize = 15.sp)
+    }
+}
+
+@Composable
+private fun LcdStatBadge(label: String, value: Int) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "$value",
+            color = Color(0xFF00FFCC),
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 2.sp
+        )
+        Text(
+            text = label,
+            color = Color(0xFF4FC3F7).copy(alpha = 0.6f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 2.sp,
+            fontFamily = FontFamily.Monospace
+        )
     }
 }
 

@@ -1,57 +1,81 @@
 # 解压键盘（GongDe）
 
-一款以"功德+1"为主题的解压类 Android 应用。用户点击屏幕上的机械键盘按键，配合按压动画、音效和飘字特效，获得即时的解压反馈与趣味体验。
+一款以“功德 +1”为核心反馈的解压类 Android 应用。用户点击机械键盘按键获得计数、音效、触觉和飘字反馈，也可以进入专注模式或 ASMR 模式获得自动计数与沉浸体验。
 
-## 功能特性
+## 当前功能
 
-- **机械键盘按键**：真实质感的三态按键图片（未按下 / 按下中 / 按下到底），点击时自动切换
-- **机械键盘音效**：每次点击同步播放合成的机械轴咔嗒声
-- **功德飘字**：点击后"功德+1"文字从按键上方飘起并逐渐淡出
-- **功德计数**：记录累计功德与当日功德，数据持久化存储
-- **一键清零**：支持重置所有计数（带确认弹窗）
-- **深色界面**：宇宙深空渐变背景 + 法轮暗纹 + 科技感点阵
+- **机械键盘点击**：三态键帽图片、按压动画、机械轴合成音效、功德飘字。
+- **计数与历史**：累计功德、今日功德、近 30 天时间线、本周/本月统计。
+- **成就系统**：按累计、单日和连续使用天数解锁成就。
+- **专注模式**：倒计时专注，每 3 秒自动增加 1 功德。
+- **ASMR 模式**：增强点击音效，支持雨声白噪音开关。
+- **分享卡片**：生成今日功德分享图并通过系统分享。
+- **个性化设置**：触觉反馈开关、青/红/茶轴音效、主题切换。
 
 ## 技术栈
 
 | 项目 | 技术 |
 |------|------|
 | 语言 | Kotlin |
-| UI 框架 | Jetpack Compose |
-| 最低 API | 24 (Android 7.0) |
-| 构建工具 | Gradle (Kotlin DSL) + Version Catalog |
-| 数据存储 | SharedPreferences |
-| 音效生成 | AudioTrack 实时合成 |
+| UI | Jetpack Compose + Material 3 |
+| 导航 | Compose Navigation |
+| 状态 | ViewModel + Compose state |
+| 数据 | SharedPreferences（计数/成就）+ DataStore（设置/连续使用）+ Room（历史） |
+| 音效 | AudioTrack 实时合成 |
+| 最低 API | 24 |
+| 构建 | Gradle Kotlin DSL + Version Catalog |
 
 ## 项目结构
 
-```
+```text
 app/src/main/java/com/gongde/app/
-├── MainActivity.kt          # 主界面：组装所有组件
+├── MainActivity.kt              # Compose 页面组装与导航
+├── GongDeApplication.kt
+├── navigation/
+│   └── Screen.kt                # 页面路由
+├── viewmodel/
+│   └── GongDeViewModel.kt       # UI 状态、业务动作、仓库协调
 ├── data/
-│   └── MeritStore.kt        # 功德数据持久化（SharedPreferences）
+│   ├── AppDatabase.kt           # Room 数据库
+│   ├── HistoryDao.kt            # 每日历史 DAO
+│   ├── GongDeRepository.kt      # 计数、历史、设置、成就协调
+│   ├── MeritStore.kt            # 累计/今日计数
+│   ├── PreferencesStore.kt      # DataStore 设置与连续使用
+│   └── AchievementStore.kt      # 成就定义与解锁状态
 └── ui/
-    ├── MechanicalButton.kt  # 机械键盘按键（图片切换 + 音效 + 按压动画）
-    ├── FloatingText.kt      # 功德+1 飘字动画
-    ├── MeritCounter.kt      # 功德计数面板
+    ├── MechanicalButton.kt
+    ├── MeritCounter.kt
+    ├── MeditationScreen.kt
+    ├── AsmrScreen.kt
+    ├── AchievementScreen.kt
+    ├── TimelineScreen.kt
+    ├── ShareCard.kt
+    ├── SettingsScreen.kt
+    ├── SoundEngine.kt
     └── theme/
-        ├── Color.kt         # 颜色定义
-        ├── Theme.kt         # Material3 暗色主题
-        └── Type.kt          # 字体样式
 ```
 
-## 构建与运行
+## 构建与测试
 
-1. 使用 Android Studio 打开项目根目录
-2. 等待 Gradle 同步完成
-3. 选择模拟器或连接真机，点击 Run
+本机如果没有全局配置 `JAVA_HOME`，可以临时使用 Android Studio 自带 JBR：
+
+```powershell
+$env:JAVA_HOME='D:\Programs\Android\Android Studio\jbr'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+.\gradlew.bat test
+.\gradlew.bat assembleDebug
+```
+
+Release 构建需要本地 `keystore.properties` 和签名文件。它们被 `.gitignore` 排除，不应提交到仓库。
 
 ## 资源说明
 
-- `res/drawable/keycap_off.png` — 未按下状态（无光效）
-- `res/drawable/keycap_mid.png` — 按下中状态（金色光效）
-- `res/drawable/keycap_on.png` — 按下到底状态（金色光效最强）
-- 图片均为 768×768 RGBA 透明底 PNG
+- `app/src/main/res/drawable/keycap_off.png`：未按下状态
+- `app/src/main/res/drawable/keycap_mid.png`：按下中状态
+- `app/src/main/res/drawable/keycap_on.png`：按下到底状态
 
-## License
+## 维护备注
 
-个人项目，仅供学习交流。
+- README 描述的是当前 v2.4.x 架构。
+- Room 历史记录使用 `gongde.db`，DataStore 设置文件为 `datastore/settings.preferences_pb`。
+- 当前测试覆盖数据存储、成就、音效参数和历史统计；UI 仍主要依赖人工/设备验证。

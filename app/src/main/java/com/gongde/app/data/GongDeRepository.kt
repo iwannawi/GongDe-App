@@ -25,9 +25,13 @@ class GongDeRepository(
 
     suspend fun recordMerit(count: Int = 1) {
         val today = LocalDate.now().format(dateFormat)
-        val existing = historyDao.getForDate(today)
-        val newCount = (existing?.count ?: 0) + count
-        historyDao.upsert(DailyHistory(today, newCount))
+        val updated = historyDao.incrementCount(today, count)
+        if (updated == 0) {
+            val inserted = historyDao.insertIgnore(DailyHistory(today, count))
+            if (inserted == -1L) {
+                historyDao.incrementCount(today, count)
+            }
+        }
     }
 
     suspend fun getRecentDays(n: Int): List<Pair<String, Int>> {
