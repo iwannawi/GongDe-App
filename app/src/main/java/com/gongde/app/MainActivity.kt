@@ -12,11 +12,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,12 +27,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.MusicNote
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.InsertChartOutlined
+import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,22 +41,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.navigation.Screen
+import com.gongde.app.data.AchievementMetric
 import com.gongde.app.ui.*
 import com.gongde.app.ui.theme.GongDeTheme
 import com.gongde.app.ui.theme.GongDeThemeExt
 import com.gongde.app.ui.theme.ThemePresets
 import com.gongde.app.viewmodel.GongDeViewModel
 import com.gongde.app.viewmodel.SettingsAction
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -82,9 +82,9 @@ private data class NavItem(
 )
 
 private val NAV_ITEMS = listOf(
-    NavItem("主页", Icons.Rounded.Home, Screen.Home.route),
-    NavItem("成就", Icons.Rounded.Star, Screen.Achievements.route),
-    NavItem("设置", Icons.Rounded.Tune, Screen.Settings.route)
+    NavItem("首页", Icons.Outlined.Home, Screen.Home.route),
+    NavItem("记录", Icons.Outlined.InsertChartOutlined, Screen.Achievements.route),
+    NavItem("设置", Icons.Outlined.Settings, Screen.Settings.route)
 )
 
 @Composable
@@ -92,6 +92,7 @@ fun GongDeApp(vm: GongDeViewModel) {
     val state = vm.uiState
     val colors = GongDeThemeExt.colors
     var currentRoute by rememberSaveable { mutableStateOf(Screen.Home.route) }
+    var keycapOrigin by remember { mutableStateOf<Offset?>(null) }
     val context = LocalContext.current
 
     LaunchedEffect(state.toastEvents) {
@@ -101,98 +102,37 @@ fun GongDeApp(vm: GongDeViewModel) {
         }
     }
 
-    var showSplash by rememberSaveable { mutableStateOf(true) }
-    val splashAlpha = remember { Animatable(1f) }
-    val splashQuote = remember { getRandomFunQuote() }
-
-    if (showSplash) {
-        BackHandler { }
-        LaunchedEffect(Unit) {
-            delay(800L)
-            splashAlpha.animateTo(0f, animationSpec = tween(400))
-            showSplash = false
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = splashAlpha.value }
-                .background(colors.surfaceDark),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "解压键盘",
-                    color = colors.textPrimary,
-                    fontSize = 28.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    letterSpacing = 6.sp
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = splashQuote,
-                    color = colors.textMuted,
-                    fontSize = 14.sp,
-                    letterSpacing = 1.sp
-                )
-            }
-        }
-        return
-    }
-
     BackHandler(enabled = currentRoute != Screen.Home.route) {
         currentRoute = Screen.Home.route
     }
 
     val bgColors = colors.bgGradient
     val showBottomBar = currentRoute in listOf(Screen.Home.route, Screen.Achievements.route, Screen.Settings.route)
-    // 根据背景亮度决定圆点颜色
-    val bgLuminance = bgColors.first().let { 0.299f * it.red + 0.587f * it.green + 0.114f * it.blue }
-    val isLightBg = bgLuminance > 0.5f
-
-    // 背景层 + 内容层 + 浮动文字层（最顶层）
+    // Background, content, and floating text layers
     Box(modifier = Modifier.fillMaxSize()) {
-        // 背景：渐变 + 科技圆点
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(colorStops = bgColors.mapIndexed { i, c ->
-                    (i.toFloat() / (bgColors.size - 1)) to c
-                }.toTypedArray()))
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize().drawWithCache {
-                val bitmap = android.graphics.Bitmap.createBitmap(
-                    size.width.toInt().coerceAtLeast(1),
-                    size.height.toInt().coerceAtLeast(1),
-                    android.graphics.Bitmap.Config.ARGB_8888
-                )
-                val canvas = android.graphics.Canvas(bitmap)
-                val sp = 48f
-                val dc = if (isLightBg) android.graphics.Color.argb(8, 0, 0, 0) else android.graphics.Color.argb(6, 255, 255, 255)
-                val ac = if (isLightBg) android.graphics.Color.argb(12, colors.accent.red.toInt(), colors.accent.green.toInt(), colors.accent.blue.toInt()) else android.graphics.Color.argb(10, 255, 213, 79)
-                val paint = android.graphics.Paint().apply { isAntiAlias = true }
-                var x = 0f
-                while (x < bitmap.width) {
-                    var y = 0f
-                    while (y < bitmap.height) {
-                        val isAccent = ((x / sp).toInt() + (y / sp).toInt()) % 7 == 0
-                        paint.color = if (isAccent) ac else dc
-                        canvas.drawCircle(x, y, if (isAccent) 1.8f else 1f, paint)
-                        y += sp
-                    }
-                    x += sp
-                }
-                val imageBitmap = bitmap.asImageBitmap()
-                onDrawBehind {
-                    drawImage(imageBitmap)
-                }
-            }) {}
+        Image(
+            painter = painterResource(R.drawable.home_paper_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        if (state.themeId != "morning_mist") {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(bgColors.map { it.copy(alpha = 0.42f) }))
+            )
         }
 
-        // 内容层
+        // Content layer
         Column(modifier = Modifier.systemBarsPadding()) {
             Box(modifier = Modifier.weight(1f)) {
-                AppContent(currentRoute, vm) { currentRoute = it }
+                AppContent(
+                    currentRoute = currentRoute,
+                    vm = vm,
+                    onNavigate = { currentRoute = it },
+                    onKeycapOriginChanged = { keycapOrigin = it }
+                )
             }
 
             if (showBottomBar) {
@@ -207,14 +147,20 @@ fun GongDeApp(vm: GongDeViewModel) {
                         NavigationBarItem(
                             selected = selected,
                             onClick = { currentRoute = item.route },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            icon = {
+                                Icon(
+                                    item.icon,
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            },
                             label = { Text(item.label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = colors.textPrimary,
-                                selectedTextColor = colors.textPrimary,
+                                selectedIconColor = colors.accent,
+                                selectedTextColor = colors.accent,
                                 unselectedIconColor = colors.unselected,
                                 unselectedTextColor = colors.unselected,
-                                indicatorColor = colors.indicator
+                                indicatorColor = Color.Transparent
                             )
                         )
                     }
@@ -222,9 +168,10 @@ fun GongDeApp(vm: GongDeViewModel) {
             }
         }
 
-        // 浮动文字层（最顶层，覆盖一切）
+        // Floating text layer
         FloatingTextContainer(
             triggerCount = state.triggerCount,
+            origin = keycapOrigin,
             modifier = Modifier.fillMaxSize()
         )
     }
@@ -234,7 +181,8 @@ fun GongDeApp(vm: GongDeViewModel) {
 fun AppContent(
     currentRoute: String,
     vm: GongDeViewModel,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onKeycapOriginChanged: (Offset) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedContent(
@@ -252,22 +200,31 @@ fun AppContent(
                     onSync = { vm.syncFromStore() },
                     onBack = { onNavigate(Screen.Home.route) }
                 )
-                Screen.Asmr.route -> AsmrRoute(vm) { onNavigate(Screen.Home.route) }
+                Screen.Asmr.route -> AsmrRoute(
+                    vm = vm,
+                    onBack = { onNavigate(Screen.Home.route) },
+                    onKeycapOriginChanged = onKeycapOriginChanged
+                )
                 Screen.Achievements.route -> AchievementsScreen(vm)
                 Screen.Settings.route -> SettingsScreen(
                     hapticEnabled = vm.uiState.hapticEnabled,
                     switchType = vm.uiState.switchType.name.lowercase(),
                     themeId = vm.uiState.themeId,
-                    onSettingsAction = { vm.handleSettings(it) }
+                    onSettingsAction = { vm.handleSettings(it) },
+                    onReset = vm::resetMerit
                 )
-                else -> HomeScreen(vm, onNavigate)
+                else -> HomeScreen(vm, onNavigate, onKeycapOriginChanged)
             }
         }
     }
 }
 
 @Composable
-fun AsmrRoute(vm: GongDeViewModel, onBack: () -> Unit) {
+fun AsmrRoute(
+    vm: GongDeViewModel,
+    onBack: () -> Unit,
+    onKeycapOriginChanged: (Offset) -> Unit
+) {
     val state = vm.uiState
     val context = LocalContext.current
     val hapticEngine = remember { HapticEngine(context) }
@@ -280,13 +237,18 @@ fun AsmrRoute(vm: GongDeViewModel, onBack: () -> Unit) {
         hapticEngine = hapticEngine,
         hapticEnabled = state.hapticEnabled,
         switchType = state.switchType,
+        onKeycapOriginChanged = onKeycapOriginChanged,
         onMeritGain = { vm.incrementMerit() },
         onBack = onBack
     )
 }
 
 @Composable
-fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
+fun HomeScreen(
+    vm: GongDeViewModel,
+    onNavigate: (String) -> Unit,
+    onKeycapOriginChanged: (Offset) -> Unit
+) {
     val state = vm.uiState
     val colors = GongDeThemeExt.colors
     val context = LocalContext.current
@@ -295,120 +257,176 @@ fun HomeScreen(vm: GongDeViewModel, onNavigate: (String) -> Unit) {
         onDispose { hapticEngine.release() }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+    val nextAchievement = vm.achievementStore.allAchievements
+        .filter { it.metric == AchievementMetric.TOTAL && it.target > state.totalCount }
+        .minByOrNull { it.target }
+    val nextMessage = nextAchievement?.let {
+        "距离${it.name}还差 ${it.target - state.totalCount} 次"
+    } ?: "累计成就已全部完成"
+    val progress = (state.todayCount.toFloat() / state.todayGoal).coerceIn(0f, 1f)
+    val hintTransition = rememberInfiniteTransition(label = "first_press_hint")
+    val hintPulse by hintTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1100), repeatMode = RepeatMode.Reverse),
+        label = "hint_pulse"
+    )
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
     ) {
-        // 信息区（顶部）：功德计数
-        MeritCounter(totalCount = state.totalCount, todayCount = state.todayCount)
+        val compactHeight = maxHeight < 720.dp
+        val veryCompactHeight = maxHeight < 620.dp
+        val keySize = minOf(
+            maxWidth * if (compactHeight) 0.78f else 0.82f,
+            when {
+                veryCompactHeight -> 252.dp
+                compactHeight -> 292.dp
+                else -> 320.dp
+            }
+        )
+        val titleSize = if (veryCompactHeight) 15.sp else 17.sp
+        val countSize = if (veryCompactHeight) 32.sp else 38.sp
+        val hintSize = if (veryCompactHeight) 16.sp else 20.sp
+        val modeSpacing = if (veryCompactHeight) 0.dp else 2.dp
 
-        // 功能按钮（紧挨计数区）
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HomeButton("专注", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.PlayArrow) { onNavigate(Screen.Focus.route) }
-            Spacer(Modifier.width(10.dp))
-            HomeButton("归零", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.Refresh) { vm.showDialog(true) }
-            Spacer(Modifier.width(10.dp))
-            HomeButton("ASMR", compact = true, modifier = Modifier.weight(1f), icon = Icons.Rounded.MusicNote) { onNavigate(Screen.Asmr.route) }
+            Spacer(Modifier.height(if (compactHeight) 8.dp else 12.dp))
+            Column(Modifier.fillMaxWidth()) {
+                Text("今日功德", color = colors.textPrimary, fontSize = titleSize, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("${state.todayCount}", color = colors.textPrimary, fontSize = countSize, fontWeight = FontWeight.Bold)
+                    Text(" / ${state.todayGoal}", color = colors.textMuted, fontSize = 17.sp, modifier = Modifier.padding(bottom = 6.dp))
+                }
+                Spacer(Modifier.height(if (veryCompactHeight) 8.dp else 10.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)),
+                    color = if (state.dailyGoalCompleted) Color(0xFF2E8B70) else colors.accent,
+                    trackColor = colors.barTrack,
+                    drawStopIndicator = {}
+                )
+                Spacer(Modifier.height(if (veryCompactHeight) 8.dp else 10.dp))
+                Text(nextMessage, color = colors.textMuted, fontSize = 13.sp)
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            Box(
+                modifier = Modifier.size(keySize),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(Modifier.fillMaxSize()) {
+                    drawOval(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(Color.Transparent, Color(0x244A5057), Color.Transparent)
+                        ),
+                        topLeft = Offset(size.width * 0.23f, size.height * 0.735f),
+                        size = androidx.compose.ui.geometry.Size(size.width * 0.54f, size.height * 0.07f)
+                    )
+                    drawOval(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(Color.Transparent, Color(0x144A5057), Color.Transparent)
+                        ),
+                        topLeft = Offset(size.width * 0.18f, size.height * 0.765f),
+                        size = androidx.compose.ui.geometry.Size(size.width * 0.64f, size.height * 0.055f)
+                    )
+                }
+                MechanicalButton(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            val scale = if (state.showFirstPressHint) 1f + hintPulse * 0.012f else 1f
+                            scaleX = scale
+                            scaleY = scale
+                        },
+                    soundEngine = vm.soundEngine,
+                    hapticEngine = hapticEngine,
+                    hapticEnabled = state.hapticEnabled,
+                    switchType = state.switchType,
+                    asmrMode = false,
+                    onKeycapOriginChanged = onKeycapOriginChanged,
+                    onPressed = { vm.incrementMerit() }
+                )
+            }
+            Spacer(Modifier.height(if (veryCompactHeight) 4.dp else 8.dp))
+            Text(
+                if (state.showFirstPressHint) "按一下，放松一秒" else "轻敲键帽，让压力停一下",
+                color = colors.textPrimary,
+                fontSize = hintSize,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(Modifier.height(if (veryCompactHeight) 10.dp else 18.dp))
+            Column(
+                modifier = Modifier.width(160.dp),
+                verticalArrangement = Arrangement.spacedBy(modeSpacing)
+            ) {
+                ModeButton("专注", Icons.Outlined.MyLocation, Modifier.fillMaxWidth()) {
+                    vm.trackModeOpen("focus")
+                    onNavigate(Screen.Focus.route)
+                }
+                ModeButton("ASMR", Icons.Outlined.Waves, Modifier.fillMaxWidth()) {
+                    vm.trackModeOpen("asmr")
+                    onNavigate(Screen.Asmr.route)
+                }
+            }
+            Spacer(Modifier.height(if (veryCompactHeight) 4.dp else 8.dp))
         }
-
-        Spacer(Modifier.weight(2f))
-
-        // 操作区：键盘中心位于下半部分中心
-        MechanicalButton(
-            modifier = Modifier.size(220.dp, 250.dp),
-            soundEngine = vm.soundEngine,
-            hapticEngine = hapticEngine,
-            hapticEnabled = state.hapticEnabled,
-            switchType = state.switchType,
-            asmrMode = false,
-            onPressed = { vm.incrementMerit() }
-        )
-        Spacer(Modifier.height(2.dp))
-        Text("解压键盘", color = colors.textMuted, fontSize = 15.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium)
-        Spacer(Modifier.weight(1f))
-        Spacer(Modifier.height(20.dp))
-    }
-
-    if (state.showResetDialog) {
-        BackHandler { vm.showDialog(false) }
-        AlertDialog(
-            onDismissRequest = { vm.showDialog(false) },
-            containerColor = colors.dialogBg,
-            titleContentColor = colors.textPrimary,
-            textContentColor = colors.textSecondary,
-            title = { Text("确认归零", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary) },
-            text = { Text("累计功德和今日功德都将归零，确定吗？\n成就和历史记录将保留。", fontSize = 15.sp, color = colors.textSecondary) },
-            confirmButton = { TextButton(onClick = { vm.resetMerit() }) { Text("确定", color = colors.accent, fontSize = 15.sp, fontWeight = FontWeight.Bold) } },
-            dismissButton = { TextButton(onClick = { vm.showDialog(false) }) { Text("取消", color = colors.textSecondary, fontSize = 15.sp) } }
-        )
     }
 }
 
 @Composable
 fun AchievementsScreen(vm: GongDeViewModel) {
     val state = vm.uiState
-    val colors = GongDeThemeExt.colors
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(28.dp)
     ) {
-        AchievementScreen(store = vm.achievementStore, weekTotal = state.weekTotal, monthTotal = state.monthTotal)
-
-        // 板块：分享
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
-                .background(colors.cardBg)
-                .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("分享", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(colors.accent.copy(alpha = 0.1f))
-                    .padding(vertical = 8.dp)
-                    .wrapContentWidth(Alignment.CenterHorizontally))
-            Spacer(Modifier.height(12.dp))
-            ShareButton(todayCount = state.todayCount)
-        }
-
-        // 板块：功德日历
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
-                .background(colors.cardBg)
-                .border(1.dp, colors.cardBorder, RoundedCornerShape(16.dp))
-                .padding(16.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeading("近期记录")
             TimelineScreen(
                 entries = state.recentDays,
                 weekTotal = state.weekTotal,
                 monthTotal = state.monthTotal
             )
         }
+
+        AchievementScreen(
+            achievements = vm.achievementStore.allAchievements,
+            completedAchievementIds = state.completedAchievementIds,
+            totalCount = state.totalCount,
+            todayCount = state.todayCount,
+            streak = state.streak
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeading("分享今日")
+            ShareButton(
+                todayCount = state.todayCount,
+                onShareStarted = vm::trackShareStarted,
+                onShareCompleted = vm::trackShareCompleted
+            )
+        }
+        Spacer(Modifier.height(8.dp))
     }
 }
 
 @Composable
-fun HomeButton(text: String, compact: Boolean = false, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
+fun ModeButton(text: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val colors = GongDeThemeExt.colors
     val scope = rememberCoroutineScope()
     val scale = remember { Animatable(1f) }
 
-    OutlinedButton(
+    TextButton(
         onClick = {
             scope.launch {
                 scale.animateTo(0.92f, tween(60, easing = FastOutSlowInEasing))
@@ -417,21 +435,15 @@ fun HomeButton(text: String, compact: Boolean = false, modifier: Modifier = Modi
             onClick()
         },
         modifier = modifier.graphicsLayer(scaleX = scale.value, scaleY = scale.value),
-        shape = RoundedCornerShape(if (compact) 14.dp else 20.dp),
-        border = BorderStroke(1.dp, colors.cardBorder),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = colors.surfaceOverlay,
-            contentColor = colors.textPrimary
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = colors.textSecondary
         ),
-        contentPadding = PaddingValues(
-            horizontal = if (compact) 12.dp else 28.dp,
-            vertical = if (compact) 8.dp else 14.dp
-        )
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(4.dp))
-        }
-        Text(text, fontSize = 15.sp)
+        Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Medium)
     }
 }

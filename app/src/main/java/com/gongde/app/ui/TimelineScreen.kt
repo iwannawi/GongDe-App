@@ -5,15 +5,30 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,88 +37,50 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val BarGreen = Color(0xFF66BB6A)
+private const val DefaultVisibleDays = 5
+
 private val DateFmt = DateTimeFormatter.ofPattern("MM月dd日", Locale.CHINESE)
 
 @Composable
-fun TimelineScreen(
-    entries: List<Pair<String, Int>>,
-    weekTotal: Int,
-    monthTotal: Int
-) {
-    val today = LocalDate.now()
+fun TimelineScreen(entries: List<Pair<String, Int>>, weekTotal: Int, monthTotal: Int) {
     val colors = GongDeThemeExt.colors
-    val accent = colors.accent
-    val todayBg = colors.cardBorder.copy(alpha = 0.09f)
-    val maxCount = (entries.maxOfOrNull { it.second } ?: 10).coerceAtLeast(10)
-
+    val today = LocalDate.now()
+    val maxCount = (entries.maxOfOrNull { it.second } ?: 1).coerceAtLeast(1)
     var expanded by remember { mutableStateOf(false) }
-    val visibleEntries = if (expanded) entries else entries.take(7)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(colors.accent.copy(alpha = 0.1f))
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "功德日历",
-                color = colors.textPrimary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .background(colors.cardBg, RoundedCornerShape(8.dp))
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TopStat("本周功德", weekTotal, colors.textPrimary, colors.textMuted)
-            TopStat("本月功德", monthTotal, accent, colors.textMuted)
+            SummaryValue("近 7 天", weekTotal)
+            SummaryValue("近 30 天", monthTotal)
         }
 
-        for (entry in visibleEntries) {
-            val dateStr = entry.first
-            val count = entry.second
-            val date = LocalDate.parse(dateStr)
-            val isToday = date == today
-            val isYesterday = date == today.minusDays(1)
-            val label = when {
-                isToday    -> "今天"
-                isYesterday -> "昨天"
-                else       -> date.format(DateFmt)
+        entries.take(DefaultVisibleDays).forEach { TimelineRow(it, today, maxCount) }
+        AnimatedVisibility(visible = expanded, enter = expandVertically(), exit = shrinkVertically()) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                entries.drop(DefaultVisibleDays).forEach { TimelineRow(it, today, maxCount) }
             }
-            TimelineRow(label, count, isToday, maxCount, todayBg, colors.textPrimary, colors.textMuted, colors.barTrack)
         }
-
-        // 展开/收起按钮
-        if (entries.size > 7) {
-            Box(
+        if (entries.size > DefaultVisibleDays) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
                     .clickable { expanded = !expanded }
                     .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = if (expanded) "收起 ▲" else "展开更多 ▼",
-                    color = accent,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium
+                Text(if (expanded) "收起" else "查看 30 天", color = colors.accent, fontSize = 13.sp)
+                Icon(
+                    if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = colors.accent,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -111,62 +88,53 @@ fun TimelineScreen(
 }
 
 @Composable
-private fun TopStat(label: String, value: Int, color: Color, mutedColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "$value", color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Text(text = label, color = mutedColor, fontSize = 15.sp)
+private fun SummaryValue(label: String, value: Int) {
+    val colors = GongDeThemeExt.colors
+    Column {
+        Text(value.toString(), color = colors.textPrimary, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = colors.textMuted, fontSize = 12.sp)
     }
 }
 
 @Composable
-private fun TimelineRow(
-    label: String, count: Int, today: Boolean, maxCount: Int,
-    todayBg: Color, textPrimary: Color, textMuted: Color, barTrack: Color
-) {
-    val progress = (count.toFloat() / maxCount).coerceIn(0f, 1f)
-    val barColor = lerp(BarGreen, textPrimary, progress)
-
+private fun TimelineRow(entry: Pair<String, Int>, today: LocalDate, maxCount: Int) {
+    val colors = GongDeThemeExt.colors
+    val date = LocalDate.parse(entry.first)
+    val label = when (date) {
+        today -> "今天"
+        today.minusDays(1) -> "昨天"
+        else -> date.format(DateFmt)
+    }
+    val progress = (entry.second.toFloat() / maxCount).coerceIn(0f, 1f)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (today) Modifier.background(todayBg, RoundedCornerShape(8.dp))
-                else Modifier
-            )
-            .padding(horizontal = 10.dp, vertical = 10.dp),
+            .padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Text(label, color = colors.textMuted, fontSize = 13.sp, modifier = Modifier.width(68.dp))
         Text(
-            text = label,
-            color = if (today) textPrimary else textMuted,
-            fontSize = 15.sp,
-            fontWeight = if (today) FontWeight.Bold else FontWeight.Medium,
-            modifier = Modifier.width(72.dp)
+            entry.second.toString(),
+            color = colors.textPrimary,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.width(42.dp)
         )
-
-        Text(
-            text = "$count",
-            color = textPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(40.dp)
-        )
-
         Box(
-            modifier = Modifier
+            Modifier
                 .weight(1f)
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(barTrack)
+                .height(5.dp)
+                .background(colors.barTrack, RoundedCornerShape(3.dp))
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(fraction = progress.coerceAtLeast(0.02f))
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(barColor)
-            )
+            if (progress > 0f) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(progress)
+                        .background(Color(0xFF607D8B), RoundedCornerShape(3.dp))
+                )
+            }
         }
     }
 }

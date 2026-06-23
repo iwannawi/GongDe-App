@@ -26,6 +26,8 @@ class PreferencesStore(private val context: Context) {
         val THEME_ID = stringPreferencesKey("theme_id")
         val LAST_ACTIVE_DATE = stringPreferencesKey("last_active_date")
         val STREAK = intPreferencesKey("current_streak")
+        val FIRST_PRESS_COMPLETED = booleanPreferencesKey("first_press_completed")
+        val DAILY_GOAL_COMPLETED_DATE = stringPreferencesKey("daily_goal_completed_date")
     }
 
     // --- Flow 观察 ---
@@ -39,6 +41,10 @@ class PreferencesStore(private val context: Context) {
     suspend fun getThemeId(): String = context.dataStore.data.first()[Keys.THEME_ID] ?: "morning_mist"
     suspend fun getLastActiveDate(): String = context.dataStore.data.first()[Keys.LAST_ACTIVE_DATE] ?: ""
     suspend fun getStreak(): Int = context.dataStore.data.first()[Keys.STREAK] ?: 0
+    suspend fun getFirstPressCompleted(): Boolean =
+        context.dataStore.data.first()[Keys.FIRST_PRESS_COMPLETED] ?: false
+    suspend fun getDailyGoalCompletedDate(): String =
+        context.dataStore.data.first()[Keys.DAILY_GOAL_COMPLETED_DATE] ?: ""
 
     // --- 写入 ---
     suspend fun setHapticEnabled(value: Boolean) {
@@ -59,5 +65,13 @@ class PreferencesStore(private val context: Context) {
 
     suspend fun setStreak(value: Int) {
         context.dataStore.edit { it[Keys.STREAK] = value }
+    }
+
+    suspend fun setFirstPressCompleted(value: Boolean) {
+        context.dataStore.edit { it[Keys.FIRST_PRESS_COMPLETED] = value }
+    }
+
+    suspend fun setDailyGoalCompletedDate(value: String) {
+        context.dataStore.edit { it[Keys.DAILY_GOAL_COMPLETED_DATE] = value }
     }
 }

@@ -14,9 +14,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-val TextDark = Color(0xFF1A1A1A)
-val TextDarkSecondary = Color(0xFF2A2A2A).copy(alpha = 0.92f)
-val TextDarkMuted = Color(0xFF3A3A3A).copy(alpha = 0.88f)
+val TextDark = Color(0xFF15191D)
+val TextDarkSecondary = Color(0xFF33383E)
+val TextDarkMuted = Color(0xFF7C838E)
 
 @Immutable
 data class ExtendedColors(
@@ -40,7 +40,7 @@ data class ExtendedColors(
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
-        accent = Color(0xFF5C6BC0),
+        accent = Color(0xFF007A9E),
         mutedGray = TextDarkMuted,
         cardBg = Color(0xF0F0F0F0),
         cardBorder = Color(0xFFD0D0D0),
@@ -114,17 +114,17 @@ fun GongDeTheme(
         ExtendedColors(
             accent = preset.accentColor,
             mutedGray = TextDarkMuted,
-            cardBg = Color(0xF0F0F0F0),
-            cardBorder = Color(0xFFD0D0D0),
+            cardBg = Color(0xF7FFFFFF),
+            cardBorder = Color(0xFFD9DEE3),
             bgGradient = preset.gradient,
             surfaceDark = preset.gradient.getOrElse(2) { Color(0xFFE9ECEF) },
             surfaceOverlay = Color(0x15000000),
             dialogBg = Color.White,
             navBarBg = Color(0xDDFFFFFF),
-            divider = Color(0xFFCCCCCC),
+            divider = Color(0xFFE1E5E9),
             unselected = Color(0xFF4A4A4A),
             indicator = preset.accentColor.copy(alpha = 0.2f),
-            barTrack = Color(0xFFCCCCCC),
+            barTrack = Color(0xFFDDE2E6),
             textPrimary = TextDark,
             textSecondary = TextDarkSecondary,
             textMuted = TextDarkMuted

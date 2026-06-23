@@ -1,8 +1,9 @@
 <resources>
     <style name="Theme.GongDe" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- Android 15+ 强制 edge-to-edge，由 enableEdgeToEdge() 和 WindowInsets 控制 -->
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">#F7F8FA</item>
+        <item name="android:windowSplashScreenBackground">#F7F8FA</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
     </style>
 </resources>

@@ -12,17 +12,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,10 +34,17 @@ fun SettingsScreen(
     hapticEnabled: Boolean,
     switchType: String,
     themeId: String,
-    onSettingsAction: (SettingsAction) -> Unit = {}
+    onSettingsAction: (SettingsAction) -> Unit = {},
+    onReset: () -> Unit = {}
 ) {
     val accent = GongDeThemeExt.colors.accent
     val colors = GongDeThemeExt.colors
+    val context = LocalContext.current
+    val hapticPreview = remember { HapticEngine(context) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    DisposableEffect(hapticPreview) {
+        onDispose { hapticPreview.release() }
+    }
 
     Column(
         modifier = Modifier
@@ -61,9 +67,12 @@ fun SettingsScreen(
                 Text("按键震动", color = colors.textPrimary, fontSize = 15.sp)
                 Switch(
                     checked = hapticEnabled,
-                    onCheckedChange = { onSettingsAction(SettingsAction.SetHaptic(it)) },
+                    onCheckedChange = { enabled ->
+                        onSettingsAction(SettingsAction.SetHaptic(enabled))
+                        if (enabled) hapticPreview.tick()
+                    },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = colors.textPrimary,
+                        checkedThumbColor = Color.White,
                         checkedTrackColor = colors.accent,
                         uncheckedThumbColor = colors.textPrimary,
                         uncheckedTrackColor = colors.barTrack,
@@ -112,7 +121,47 @@ fun SettingsScreen(
             }
         }
 
+        Spacer(Modifier.height(20.dp))
+        SectionTitle("数据管理")
+        OutlinedButton(
+            onClick = { showResetDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, colors.cardBorder),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textSecondary)
+        ) {
+            Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("清零功德计数")
+        }
+
+        Spacer(Modifier.height(20.dp))
+        SectionTitle("隐私")
+        Text(
+            "用于统计匿名的启动、按键里程碑、模式进入和分享事件；不主动上传功德明细、分享内容、姓名或联系方式。",
+            color = colors.textMuted,
+            fontSize = 13.sp,
+            lineHeight = 20.sp
+        )
+
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            containerColor = colors.dialogBg,
+            title = { Text("确认清零", color = colors.textPrimary) },
+            text = { Text("累计功德和今日功德将归零，成就和历史记录会保留。", color = colors.textSecondary) },
+            confirmButton = {
+                TextButton(onClick = { showResetDialog = false; onReset() }) {
+                    Text("清零", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) { Text("取消", color = colors.textSecondary) }
+            }
+        )
     }
 }
 
@@ -127,9 +176,9 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(14.dp))
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(14.dp))
+            .shadow(1.dp, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(8.dp))
             .background(GongDeThemeExt.colors.cardBg)
             .padding(16.dp),
         content = content
@@ -147,7 +196,7 @@ private fun SwitchOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(if (isSelected) accent.copy(alpha = 0.08f) else Color.Transparent)
             .clickable { onSelect(value) }
             .padding(horizontal = 4.dp, vertical = 6.dp),
@@ -176,10 +225,10 @@ private fun ThemeOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .then(
-                if (selected) Modifier.border(1.5.dp, colors.accent, RoundedCornerShape(10.dp))
-                else Modifier.border(1.dp, colors.cardBorder, RoundedCornerShape(10.dp))
+                if (selected) Modifier.border(1.5.dp, colors.accent, RoundedCornerShape(8.dp))
+                else Modifier.border(1.dp, colors.cardBorder, RoundedCornerShape(8.dp))
             )
             .clickable(onClick = onClick)
             .padding(12.dp),

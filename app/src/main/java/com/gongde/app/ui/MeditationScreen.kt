@@ -283,7 +283,7 @@ private fun IdleContent(
             // "返回" 按钮
             OutlinedButton(
                 onClick = onBack,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.Transparent,
@@ -356,7 +356,7 @@ private fun IdleContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(GongDeThemeExt.colors.accent)
                 .clickable { onStart() },
             contentAlignment = Alignment.Center
@@ -390,10 +390,10 @@ private fun DurationCard(
     Box(
         modifier = modifier
             .height(72.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .then(
-                if (selected) Modifier.border(2.dp, GongDeThemeExt.colors.accent, RoundedCornerShape(12.dp))
-                else Modifier.border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(12.dp))
+                if (selected) Modifier.border(2.dp, GongDeThemeExt.colors.accent, RoundedCornerShape(8.dp))
+                else Modifier.border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(8.dp))
             )
             .background(if (selected) GongDeThemeExt.colors.accent.copy(alpha = 0.2f) else GongDeThemeExt.colors.cardBg)
             .clickable(onClick = onClick),
@@ -450,7 +450,7 @@ private fun RunningContent(
             // "返回" 按钮
             OutlinedButton(
                 onClick = onBack,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.Transparent,
@@ -483,8 +483,8 @@ private fun RunningContent(
             modifier = Modifier
                 .width(140.dp)
                 .height(48.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.5.dp, Color.White, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(8.dp))
+                .border(1.5.dp, Color.White, RoundedCornerShape(8.dp))
                 .background(Color.Transparent)
                 .clickable { onTogglePause() },
             contentAlignment = Alignment.Center
@@ -588,7 +588,7 @@ private fun FinishedContent(
         // "返回" 按钮
         OutlinedButton(
             onClick = onBack,
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(8.dp),
             border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
             colors = ButtonDefaults.outlinedButtonColors(
                 containerColor = Color.Transparent,

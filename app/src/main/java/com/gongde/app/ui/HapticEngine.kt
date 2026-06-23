@@ -25,7 +25,7 @@ class HapticEngine(context: Context) {
     }
 
     /**
-     * 短促点击触觉反馈（45ms，最大可用振幅）
+     * 清晰的机械按键触觉反馈：一次主脉冲加一次较轻的回弹脉冲。
      *
      * 适用于按键触发、段落感模拟等场景。
      * 仅在设备支持振动器时执行。
@@ -35,11 +35,15 @@ class HapticEngine(context: Context) {
         if (!v.hasVibrator()) return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val amplitude = if (v.hasAmplitudeControl()) 255 else VibrationEffect.DEFAULT_AMPLITUDE
-            v.vibrate(VibrationEffect.createOneShot(45, amplitude))
+            val amplitudes = if (v.hasAmplitudeControl()) {
+                intArrayOf(0, 255, 0, 180)
+            } else {
+                intArrayOf(0, VibrationEffect.DEFAULT_AMPLITUDE, 0, VibrationEffect.DEFAULT_AMPLITUDE)
+            }
+            v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 35, 18, 28), amplitudes, -1))
         } else {
             @Suppress("DEPRECATION")
-            v.vibrate(45)
+            v.vibrate(longArrayOf(0, 35, 18, 28), -1)
         }
     }
 

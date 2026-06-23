@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
@@ -50,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +78,7 @@ fun AsmrScreen(
     hapticEngine: HapticEngine,
     hapticEnabled: Boolean = true,
     switchType: SwitchType = SwitchType.BLUE,
+    onKeycapOriginChanged: (Offset) -> Unit = {},
     onMeritGain: () -> Unit = {},
     onBack: () -> Unit
 ) {
@@ -110,7 +114,7 @@ fun AsmrScreen(
             // "返回" 按钮
             OutlinedButton(
                 onClick = onBack,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, GongDeThemeExt.colors.accent),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = Color.Transparent,
@@ -167,6 +171,7 @@ fun AsmrScreen(
             hapticEnabled = hapticEnabled,
             switchType = switchType,
             asmrMode = true,
+            onKeycapOriginChanged = onKeycapOriginChanged,
             onPressed = {
                 // 通过统一回调递增功德（含历史记录 + 成就检查）
                 onMeritGain()
@@ -180,11 +185,11 @@ fun AsmrScreen(
         // 白噪音（雨声）开关
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .border(
                     width = 1.dp,
                     color = if (rainEnabled) accent else GongDeThemeExt.colors.cardBorder,
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(8.dp)
                 )
                 .background(if (rainEnabled) accent.copy(alpha = 0.1f) else GongDeThemeExt.colors.cardBg)
                 .clickable {
@@ -200,12 +205,21 @@ fun AsmrScreen(
                 .padding(horizontal = 20.dp, vertical = 14.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = if (rainEnabled) "🔊 白噪音 ON" else "🔇 白噪音 OFF",
-                color = if (rainEnabled) accent else GongDeThemeExt.colors.textMuted,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (rainEnabled) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
+                    contentDescription = null,
+                    tint = if (rainEnabled) accent else GongDeThemeExt.colors.textMuted,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = if (rainEnabled) "白噪音已开启" else "白噪音已关闭",
+                    color = if (rainEnabled) accent else GongDeThemeExt.colors.textMuted,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

@@ -9,6 +9,10 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.gongde.app"
     compileSdk = 35
@@ -17,8 +21,9 @@ android {
         applicationId = "com.gongde.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 14
-        versionName = "2.4.2"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionCode = 15
+        versionName = "2.5.0"
     }
 
     signingConfigs {
@@ -49,7 +54,7 @@ android {
         }
     }
 
-    // APK 输出命名：GongDe-v2.0.0-20260604.apk
+    // APK output name: GongDe-v2.5.0-20260623.apk
     @Suppress("DEPRECATION")
     applicationVariants.configureEach {
         val verName = versionName ?: "unknown"
@@ -88,14 +93,18 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 }

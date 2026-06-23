@@ -28,6 +28,8 @@ class PreferencesStoreTest {
             store.setThemeId("morning_mist")
             store.setLastActiveDate("")
             store.setStreak(0)
+            store.setFirstPressCompleted(false)
+            store.setDailyGoalCompletedDate("")
         }
     }
 
@@ -58,5 +60,16 @@ class PreferencesStoreTest {
         assertEquals("morning_mist", store.getThemeId())
         assertEquals("", store.getLastActiveDate())
         assertEquals(0, store.getStreak())
+        assertFalse(store.getFirstPressCompleted())
+        assertEquals("", store.getDailyGoalCompletedDate())
+    }
+
+    @Test
+    fun `onboarding and daily goal state persist`() = runTest {
+        store.setFirstPressCompleted(true)
+        store.setDailyGoalCompletedDate("2026-06-18")
+
+        assertTrue(store.getFirstPressCompleted())
+        assertEquals("2026-06-18", store.getDailyGoalCompletedDate())
     }
 }

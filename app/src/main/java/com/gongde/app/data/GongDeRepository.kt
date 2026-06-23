@@ -69,6 +69,11 @@ class GongDeRepository(
 
     suspend fun getThemeId() = prefsStore.getThemeId()
     suspend fun setThemeId(value: String) = prefsStore.setThemeId(value)
+    suspend fun getFirstPressCompleted() = prefsStore.getFirstPressCompleted()
+    suspend fun setFirstPressCompleted(value: Boolean) = prefsStore.setFirstPressCompleted(value)
+    suspend fun getDailyGoalCompletedDate() = prefsStore.getDailyGoalCompletedDate()
+    suspend fun setDailyGoalCompletedDate(value: String) = prefsStore.setDailyGoalCompletedDate(value)
+    suspend fun getStreak() = prefsStore.getStreak()
 
     // ==================== 成就 ====================
 
@@ -79,6 +84,11 @@ class GongDeRepository(
     suspend fun checkAndUnlock(totalCount: Int, todayCount: Int): List<Achievement> {
         val streak = prefsStore.getStreak()
         return achievementStore.checkAndUnlock(totalCount, todayCount, streak)
+    }
+
+    suspend fun getCompletedAchievementIds(totalCount: Int, todayCount: Int): Set<String> {
+        val streak = prefsStore.getStreak()
+        return achievementStore.getCompletedIds(totalCount, todayCount, streak)
     }
 
     suspend fun updateStreak() {

@@ -19,23 +19,23 @@ data class ThemePreset(
 )
 
 object ThemePresets {
-    /** 晨雾白 - 柔和灰白背景 */
+    /** 晨雾白 - 冷调中性背景 */
     val MorningMist = ThemePreset(
         name = "晨雾白",
         gradient = listOf(
-            Color(0xFFE8E8ED), Color(0xFFE2E2E8),
-            Color(0xFFDCDCE3), Color(0xFFE5E5EB)
+            Color(0xFFF7F8FA), Color(0xFFF2F4F6),
+            Color(0xFFEDF0F2), Color(0xFFF5F6F8)
         ),
-        accentColor = Color(0xFF5C6BC0),
+        accentColor = Color(0xFF007A9E),
         isLight = true
     )
 
-    /** 薄荷绿 - 柔和浅绿背景 */
+    /** 薄荷绿 - 低饱和冷绿背景 */
     val MintFresh = ThemePreset(
         name = "薄荷绿",
         gradient = listOf(
-            Color(0xFFD5E8D8), Color(0xFFCEE4D2),
-            Color(0xFFC8DECC), Color(0xFFD2E6D5)
+            Color(0xFFF4F8F6), Color(0xFFEEF5F1),
+            Color(0xFFE8F1ED), Color(0xFFF2F7F4)
         ),
         accentColor = Color(0xFF26A69A),
         isLight = true
@@ -45,19 +45,19 @@ object ThemePresets {
     val SkyBlue = ThemePreset(
         name = "天空蓝",
         gradient = listOf(
-            Color(0xFFD0E0F0), Color(0xFFCAD9EB),
-            Color(0xFFC4D3E6), Color(0xFFCDDAE9)
+            Color(0xFFF4F7FA), Color(0xFFEDF3F8),
+            Color(0xFFE8EFF5), Color(0xFFF1F5F8)
         ),
         accentColor = Color(0xFF42A5F5),
         isLight = true
     )
 
-    /** 日落橙 - 柔和暖色背景 */
+    /** 暖灰 - 克制的暖中性背景 */
     val Sunset = ThemePreset(
-        name = "日落橙",
+        name = "暖灰",
         gradient = listOf(
-            Color(0xFFEDD9C4), Color(0xFFE8D3BB),
-            Color(0xFFE3CDB2), Color(0xFFEBD6BF)
+            Color(0xFFF7F5F4), Color(0xFFF2EFED),
+            Color(0xFFEDEAE8), Color(0xFFF5F2F0)
         ),
         accentColor = Color(0xFFFF7043),
         isLight = true

@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
@@ -50,6 +52,7 @@ import kotlin.random.Random
  */
 private data class FloatingTextItem(
     val id: Long,
+    val origin: Offset,
     val y: Animatable<Float, *> = Animatable(0f),
     val alpha: Animatable<Float, *> = Animatable(1f),
     val xDrift: Float = Random.nextFloat() * 60f - 30f,  // -30dp ~ +30dp 随机偏移
@@ -71,6 +74,7 @@ private data class FloatingTextItem(
 @Composable
 fun FloatingTextContainer(
     triggerCount: Int,
+    origin: Offset?,
     text: String = "功德+1",
     modifier: Modifier = Modifier,
     distancePx: Float = 700f,
@@ -81,9 +85,10 @@ fun FloatingTextContainer(
 
     // 当触发计数变化时，创建一个新的浮动文字项（上限 15 个，避免快速点击时过多协程）
     LaunchedEffect(triggerCount) {
-        if (triggerCount > 0) {
+        val currentOrigin = origin
+        if (triggerCount > 0 && currentOrigin != null) {
             if (items.size >= 15) items.removeAt(0)
-            val item = FloatingTextItem(id = System.nanoTime())
+            val item = FloatingTextItem(id = System.nanoTime(), origin = currentOrigin)
             items.add(item)
         }
     }
@@ -139,13 +144,14 @@ fun FloatingTextContainer(
                 Text(
                     text = text,
                     modifier = Modifier
-                        .align(Alignment.TopCenter)  // 水平居中对齐
+                        .align(Alignment.TopStart)
                         .offset {
                             IntOffset(
-                                x = item.xDrift.dp.roundToPx(),   // 水平随机偏移
-                                y = 420.dp.roundToPx() + item.y.value.dp.roundToPx()  // 从键盘位置向上飘
+                                x = item.origin.x.roundToInt() + item.xDrift.dp.roundToPx(),
+                                y = item.origin.y.roundToInt() + item.y.value.dp.roundToPx()
                             )
                         }
+                        .graphicsLayer { translationX = -size.width / 2f }
                         .alpha(item.alpha.value),  // 应用淡出透明度
                     style = TextStyle(
                         color = Color(0xFF6B7B8D),
