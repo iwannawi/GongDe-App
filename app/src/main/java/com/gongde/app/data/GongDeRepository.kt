@@ -74,6 +74,14 @@ class GongDeRepository(
     suspend fun getDailyGoalCompletedDate() = prefsStore.getDailyGoalCompletedDate()
     suspend fun setDailyGoalCompletedDate(value: String) = prefsStore.setDailyGoalCompletedDate(value)
     suspend fun getStreak() = prefsStore.getStreak()
+    suspend fun getRoundsToday() = prefsStore.getRoundsToday()
+    suspend fun getBestComboToday() = prefsStore.getBestComboToday()
+    suspend fun getBestComboAllTime() = prefsStore.getBestComboAllTime()
+    suspend fun getEmotionCardIndex() = prefsStore.getEmotionCardIndex()
+    suspend fun setEmotionCardIndex(value: Int) = prefsStore.setEmotionCardIndex(value)
+    suspend fun getDailyRewardClaimedDate() = prefsStore.getDailyRewardClaimedDate()
+    suspend fun setDailyRewardClaimedDate(value: String) = prefsStore.setDailyRewardClaimedDate(value)
+    suspend fun recordReliefRound(bestCombo: Int) = prefsStore.recordReliefRound(bestCombo)
 
     // ==================== 成就 ====================
 

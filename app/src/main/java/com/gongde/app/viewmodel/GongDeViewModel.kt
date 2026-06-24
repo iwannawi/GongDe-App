@@ -46,6 +46,11 @@ data class MeritUiState(
     val streak: Int = 0,
     val showFirstPressHint: Boolean = true,
     val dailyGoalCompleted: Boolean = false,
+    val roundsToday: Int = 0,
+    val bestComboToday: Int = 0,
+    val bestComboAllTime: Int = 0,
+    val emotionCardIndex: Int = 0,
+    val dailyRewardClaimed: Boolean = false,
     val toastEvents: List<String> = emptyList()
 )
 
@@ -98,6 +103,11 @@ class GongDeViewModel(
                 repo.setDailyGoalCompletedDate(todayDate)
                 dailyGoalCompleted = true
             }
+            val dailyRewardClaimed = repo.getDailyRewardClaimedDate() == todayDate
+            val roundsToday = repo.getRoundsToday()
+            val bestComboToday = repo.getBestComboToday()
+            val bestComboAllTime = repo.getBestComboAllTime()
+            val emotionCardIndex = repo.getEmotionCardIndex()
 
             withContext(Dispatchers.Main) {
                 _uiState = _uiState.copy(
@@ -112,7 +122,12 @@ class GongDeViewModel(
                     completedAchievementIds = completedAchievementIds,
                     streak = streak,
                     showFirstPressHint = showFirstPressHint,
-                    dailyGoalCompleted = dailyGoalCompleted
+                    dailyGoalCompleted = dailyGoalCompleted,
+                    roundsToday = roundsToday,
+                    bestComboToday = bestComboToday,
+                    bestComboAllTime = bestComboAllTime,
+                    emotionCardIndex = emotionCardIndex,
+                    dailyRewardClaimed = dailyRewardClaimed
                 )
             }
         }
@@ -243,6 +258,37 @@ class GongDeViewModel(
 
     fun trackShareCompleted() = analytics.track(AnalyticsEvent.SHARE_COMPLETED)
 
+    fun setEmotionCard(index: Int) {
+        _uiState = _uiState.copy(emotionCardIndex = index)
+        viewModelScope.launch(Dispatchers.IO) { repo.setEmotionCardIndex(index) }
+    }
+
+    fun completeReliefRound(bestCombo: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repo.recordReliefRound(bestCombo)
+            val todayDate = LocalDate.now().toString()
+            val shouldClaimReward = _uiState.todayCount >= _uiState.todayGoal &&
+                repo.getDailyRewardClaimedDate() != todayDate
+            if (shouldClaimReward) repo.setDailyRewardClaimedDate(todayDate)
+            val roundsToday = repo.getRoundsToday()
+            val bestToday = repo.getBestComboToday()
+            val bestAll = repo.getBestComboAllTime()
+            withContext(Dispatchers.Main) {
+                _uiState = _uiState.copy(
+                    roundsToday = roundsToday,
+                    bestComboToday = bestToday,
+                    bestComboAllTime = bestAll,
+                    dailyRewardClaimed = _uiState.dailyRewardClaimed || shouldClaimReward,
+                    toastEvents = if (shouldClaimReward) {
+                        _uiState.toastEvents + "今日奖励已解锁"
+                    } else {
+                        _uiState.toastEvents
+                    }
+                )
+            }
+        }
+    }
+
     fun consumeToastEvents(): List<String> {
         val events = _uiState.toastEvents
         if (events.isNotEmpty()) {
@@ -273,8 +319,18 @@ class GongDeViewModel(
         val week = repo.getWeekTotal()
         val month = repo.getMonthTotal()
         val days = repo.getRecentDays(30)
+        val roundsToday = repo.getRoundsToday()
+        val bestToday = repo.getBestComboToday()
+        val bestAll = repo.getBestComboAllTime()
         withContext(Dispatchers.Main) {
-            _uiState = _uiState.copy(weekTotal = week, monthTotal = month, recentDays = days)
+            _uiState = _uiState.copy(
+                weekTotal = week,
+                monthTotal = month,
+                recentDays = days,
+                roundsToday = roundsToday,
+                bestComboToday = bestToday,
+                bestComboAllTime = bestAll
+            )
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -12,6 +13,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,10 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
+import com.gongde.app.R
 import com.gongde.app.ui.theme.GongDeThemeExt
 import java.io.File
 import java.io.FileOutputStream
@@ -66,6 +71,9 @@ private val ShareRed = Color(0xFFD83A31)
 @Composable
 fun ShareButton(
     todayCount: Int,
+    roundsToday: Int = 0,
+    bestComboToday: Int = 0,
+    emotionTitle: String = "今日解压",
     modifier: Modifier = Modifier,
     onShareStarted: () -> Unit = {},
     onShareCompleted: () -> Unit = {},
@@ -80,6 +88,9 @@ fun ShareButton(
     if (showPreview) {
         SharePreviewDialogWithContent(
             todayCount = todayCount,
+            roundsToday = roundsToday,
+            bestComboToday = bestComboToday,
+            emotionTitle = emotionTitle,
             quote = currentQuote,
             onDismiss = {
                 showPreview = false
@@ -87,7 +98,7 @@ fun ShareButton(
             },
             onShare = {
                 onShareStarted()
-                if (shareMeritCard(context, todayCount, currentQuote)) {
+                if (shareMeritCard(context, todayCount, roundsToday, bestComboToday, emotionTitle, currentQuote)) {
                     onShareCompleted()
                 }
                 showPreview = false
@@ -98,6 +109,9 @@ fun ShareButton(
 
     ShareSummaryCard(
         todayCount = todayCount,
+        roundsToday = roundsToday,
+        bestComboToday = bestComboToday,
+        emotionTitle = emotionTitle,
         quote = currentQuote,
         modifier = modifier,
         onClick = openPreview
@@ -107,6 +121,9 @@ fun ShareButton(
 @Composable
 private fun ShareSummaryCard(
     todayCount: Int,
+    roundsToday: Int,
+    bestComboToday: Int,
+    emotionTitle: String,
     quote: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
@@ -125,6 +142,9 @@ private fun ShareSummaryCard(
     ) {
         ShareCardViewWithContent(
             todayCount = todayCount,
+            roundsToday = roundsToday,
+            bestComboToday = bestComboToday,
+            emotionTitle = emotionTitle,
             quote = quote,
             compact = true,
             modifier = Modifier
@@ -137,16 +157,23 @@ private fun ShareSummaryCard(
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Text(
-                text = "今日卡片",
+                text = "解压日报",
                 color = colors.textMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "今日功德 +$todayCount",
+                text = "今日释放 $todayCount 次",
                 color = colors.textPrimary,
                 fontSize = 21.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "$roundsToday 轮 · 最高 $bestComboToday 连击 · $emotionTitle",
+                color = colors.textMuted,
+                fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -182,6 +209,9 @@ private fun ShareSummaryCard(
 @Composable
 private fun ShareCardViewWithContent(
     todayCount: Int,
+    roundsToday: Int,
+    bestComboToday: Int,
+    emotionTitle: String,
     quote: String,
     modifier: Modifier = Modifier,
     compact: Boolean = false
@@ -190,7 +220,7 @@ private fun ShareCardViewWithContent(
     val verticalPadding = if (compact) 8.dp else 18.dp
     val brandSize = if (compact) 8.sp else 12.sp
     val labelSize = if (compact) 8.sp else 13.sp
-    val countSize = if (compact) 24.sp else 42.sp
+    val countSize = if (compact) 22.sp else 42.sp
     val quoteSize = if (compact) 8.sp else 16.sp
     val quoteLineHeight = if (compact) 10.sp else 21.sp
     val watermarkSize = if (compact) 7.sp else 12.sp
@@ -209,10 +239,11 @@ private fun ShareCardViewWithContent(
             val h = size.height
             drawCircle(Color.White.copy(alpha = 0.7f), w * 0.46f, Offset(w * 0.12f, h * 0.12f))
             drawCircle(Color(0x227C8792), w * 0.38f, Offset(w * 0.92f, h * 0.88f))
+            drawCircle(Color(0x22D83A31), w * 0.23f, Offset(w * 0.58f, h * 0.34f))
             drawLine(
                 color = Color(0x1F15191D),
-                start = Offset(w * 0.2f, h * 0.73f),
-                end = Offset(w * 0.8f, h * 0.73f),
+                start = Offset(w * 0.2f, h * 0.76f),
+                end = Offset(w * 0.8f, h * 0.76f),
                 strokeWidth = 1.dp.toPx()
             )
         }
@@ -222,14 +253,27 @@ private fun ShareCardViewWithContent(
         ) {
             Text("解压键盘", color = Color(0xFF5E6670), fontSize = brandSize, fontWeight = FontWeight.Medium)
             Spacer(Modifier.weight(1f))
-            Text("今日功德", color = Color(0xFF7C838E), fontSize = labelSize)
+            Text(emotionTitle, color = Color(0xFF7C838E), fontSize = labelSize, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Image(
+                painter = painterResource(R.drawable.concept_key_transparent),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth(if (compact) 0.72f else 0.66f)
+                    .height(if (compact) 24.dp else 88.dp),
+                contentScale = ContentScale.Fit
+            )
             Text(
-                text = "+$todayCount",
+                text = "$todayCount 次",
                 color = ShareRed,
                 fontSize = countSize,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
             )
+            Spacer(Modifier.height(if (compact) 3.dp else 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 8.dp)) {
+                Text("${roundsToday}轮", color = Color(0xFF0F9B9B), fontSize = labelSize, fontWeight = FontWeight.SemiBold)
+                Text("最高${bestComboToday}连击", color = Color(0xFF0F9B9B), fontSize = labelSize, fontWeight = FontWeight.SemiBold)
+            }
             Spacer(Modifier.height(if (compact) 5.dp else 14.dp))
             Text(
                 text = quote,
@@ -242,7 +286,7 @@ private fun ShareCardViewWithContent(
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.weight(1f))
-            Text("功德+1 · 放松一下", color = Color(0xFF7C838E), fontSize = watermarkSize)
+            Text("点击键帽 · 释放压力", color = Color(0xFF7C838E), fontSize = watermarkSize)
         }
     }
 }
@@ -250,6 +294,9 @@ private fun ShareCardViewWithContent(
 @Composable
 private fun SharePreviewDialogWithContent(
     todayCount: Int,
+    roundsToday: Int,
+    bestComboToday: Int,
+    emotionTitle: String,
     quote: String,
     onDismiss: () -> Unit,
     onShare: () -> Unit
@@ -262,6 +309,9 @@ private fun SharePreviewDialogWithContent(
         text = {
             ShareCardViewWithContent(
                 todayCount = todayCount,
+                roundsToday = roundsToday,
+                bestComboToday = bestComboToday,
+                emotionTitle = emotionTitle,
                 quote = quote,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -282,10 +332,13 @@ private fun SharePreviewDialogWithContent(
 private fun shareMeritCard(
     context: Context,
     todayCount: Int,
+    roundsToday: Int,
+    bestComboToday: Int,
+    emotionTitle: String,
     quote: String
 ): Boolean {
     try {
-        val bitmap = renderShareBitmap(todayCount, quote)
+        val bitmap = renderShareBitmap(context, todayCount, roundsToday, bestComboToday, emotionTitle, quote)
         try {
             val shareDir = File(context.cacheDir, "share").also { it.mkdirs() }
             val file = File(shareDir, "share_merit_${System.currentTimeMillis()}.png")
@@ -311,7 +364,11 @@ private fun shareMeritCard(
 }
 
 private fun renderShareBitmap(
+    context: Context,
     todayCount: Int,
+    roundsToday: Int,
+    bestComboToday: Int,
+    emotionTitle: String,
     quote: String
 ): Bitmap {
     val density = 1f
@@ -355,21 +412,39 @@ private fun renderShareBitmap(
         textAlign = Paint.Align.CENTER
         typeface = tf
     }
-    canvas.drawText("今日功德", w / 2f, h * 0.31f, labelPaint)
+    canvas.drawText(emotionTitle.take(12), w / 2f, h * 0.27f, labelPaint)
+
+    BitmapFactory.decodeResource(context.resources, R.drawable.concept_key_transparent)?.let { keyBitmap ->
+        val targetWidth = w * 0.42f
+        val targetHeight = targetWidth * keyBitmap.height / keyBitmap.width
+        val left = w / 2f - targetWidth / 2f
+        val top = h * 0.31f
+        val dst = android.graphics.RectF(left, top, left + targetWidth, top + targetHeight)
+        canvas.drawBitmap(keyBitmap, null, dst, Paint(Paint.ANTI_ALIAS_FLAG))
+        keyBitmap.recycle()
+    }
 
     val countPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ShareRed.toArgb()
-        textSize = 138f * density
+        textSize = 118f * density
         textAlign = Paint.Align.CENTER
         typeface = Typeface.create(tf, Typeface.BOLD)
     }
-    canvas.drawText("+$todayCount", w / 2f, h * 0.43f, countPaint)
+    canvas.drawText("$todayCount 次", w / 2f, h * 0.54f, countPaint)
+
+    val statPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color(0xFF0F9B9B).toArgb()
+        textSize = 42f * density
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(tf, Typeface.BOLD)
+    }
+    canvas.drawText("${roundsToday} 轮解压 · 最高 ${bestComboToday} 连击", w / 2f, h * 0.61f, statPaint)
 
     val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.argb(36, 21, 25, 29)
         strokeWidth = 2f * density
     }
-    canvas.drawLine(w * 0.23f, h * 0.52f, w * 0.77f, h * 0.52f, linePaint)
+    canvas.drawLine(w * 0.23f, h * 0.67f, w * 0.77f, h * 0.67f, linePaint)
 
     val quotePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color(0xFF15191D).toArgb()
@@ -381,7 +456,7 @@ private fun renderShareBitmap(
         text = quote,
         paint = quotePaint,
         centerX = w / 2f,
-        centerY = h * 0.65f,
+        centerY = h * 0.78f,
         width = (w - 180 * density).toInt(),
         maxHeight = (260 * density).toInt()
     )
@@ -392,7 +467,7 @@ private fun renderShareBitmap(
         textAlign = Paint.Align.CENTER
         typeface = tf
     }
-    canvas.drawText("功德+1 · 放松一下", w / 2f, h - 118f * density, watermarkPaint)
+    canvas.drawText("点击键帽 · 释放压力", w / 2f, h - 118f * density, watermarkPaint)
 
     return bitmap
 }

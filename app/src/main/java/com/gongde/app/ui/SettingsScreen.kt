@@ -53,7 +53,7 @@ fun SettingsScreen(
             .padding(horizontal = 20.dp, vertical = 16.dp)
             .padding(top = 32.dp)
     ) {
-        Text("设置", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("设置", color = colors.textPrimary, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(24.dp))
 
         // ===== 触觉反馈 =====
@@ -64,7 +64,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("按键震动", color = colors.textPrimary, fontSize = 15.sp)
+                Text("触感反馈", color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Switch(
                     checked = hapticEnabled,
                     onCheckedChange = { enabled ->
@@ -84,19 +84,19 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ===== 机械轴声音 =====
-        SectionTitle("按键音效")
+        // ===== 声音主题 =====
+        SectionTitle("声音主题")
         SettingsCard {
             Column {
-                SwitchOption("青轴 · 清脆", "blue", switchType, accent) {
+                SwitchOption("清脆机械", "blue", switchType, accent) {
                     onSettingsAction(SettingsAction.SetSwitchType(it))
                 }
                 Spacer(Modifier.height(8.dp))
-                SwitchOption("红轴 · 柔和", "red", switchType, accent) {
+                SwitchOption("柔和低噪", "red", switchType, accent) {
                     onSettingsAction(SettingsAction.SetSwitchType(it))
                 }
                 Spacer(Modifier.height(8.dp))
-                SwitchOption("茶轴 · 适中", "brown", switchType, accent) {
+                SwitchOption("均衡茶感", "brown", switchType, accent) {
                     onSettingsAction(SettingsAction.SetSwitchType(it))
                 }
             }
@@ -105,7 +105,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(20.dp))
 
         // ===== 主题切换 =====
-        SectionTitle("主题")
+        SectionTitle("外观")
         SettingsCard {
             Column {
                 ThemePresets.allThemeIds.forEachIndexed { index, id ->
@@ -122,7 +122,7 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(20.dp))
-        SectionTitle("数据管理")
+        SectionTitle("隐私与数据")
         OutlinedButton(
             onClick = { showResetDialog = true },
             modifier = Modifier.fillMaxWidth(),
@@ -132,11 +132,11 @@ fun SettingsScreen(
         ) {
             Icon(Icons.Rounded.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("清零功德计数")
+            Text("清空本地计数")
         }
 
         Spacer(Modifier.height(20.dp))
-        SectionTitle("隐私")
+        SectionTitle("隐私说明")
         Text(
             "用于统计匿名的启动、按键里程碑、模式进入和分享事件；不主动上传功德明细、分享内容、姓名或联系方式。",
             color = colors.textMuted,
@@ -151,11 +151,11 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
             containerColor = colors.dialogBg,
-            title = { Text("确认清零", color = colors.textPrimary) },
-            text = { Text("累计功德和今日功德将归零，成就和历史记录会保留。", color = colors.textSecondary) },
+            title = { Text("确认清空", color = colors.textPrimary) },
+            text = { Text("累计次数和今日次数将归零，成就和历史记录会保留。", color = colors.textSecondary) },
             confirmButton = {
                 TextButton(onClick = { showResetDialog = false; onReset() }) {
-                    Text("清零", color = MaterialTheme.colorScheme.error)
+                    Text("清空", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -167,7 +167,7 @@ fun SettingsScreen(
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text, color = GongDeThemeExt.colors.textMuted, fontSize = 15.sp, letterSpacing = 2.sp,
+    Text(text, color = GongDeThemeExt.colors.textMuted, fontSize = 14.sp, letterSpacing = 0.sp,
         modifier = Modifier.padding(bottom = 8.dp))
 }
 
@@ -176,9 +176,9 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(1.dp, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, GongDeThemeExt.colors.cardBorder, RoundedCornerShape(8.dp))
+            .shadow(8.dp, RoundedCornerShape(24.dp), ambientColor = Color(0x1815191D), spotColor = Color(0x2215191D))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.82f), RoundedCornerShape(24.dp))
             .background(GongDeThemeExt.colors.cardBg)
             .padding(16.dp),
         content = content
@@ -196,7 +196,7 @@ private fun SwitchOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(if (isSelected) accent.copy(alpha = 0.08f) else Color.Transparent)
             .clickable { onSelect(value) }
             .padding(horizontal = 4.dp, vertical = 6.dp),
@@ -225,10 +225,10 @@ private fun ThemeOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(18.dp))
             .then(
-                if (selected) Modifier.border(1.5.dp, colors.accent, RoundedCornerShape(8.dp))
-                else Modifier.border(1.dp, colors.cardBorder, RoundedCornerShape(8.dp))
+                if (selected) Modifier.border(1.5.dp, colors.accent, RoundedCornerShape(18.dp))
+                else Modifier.border(1.dp, colors.cardBorder, RoundedCornerShape(18.dp))
             )
             .clickable(onClick = onClick)
             .padding(12.dp),

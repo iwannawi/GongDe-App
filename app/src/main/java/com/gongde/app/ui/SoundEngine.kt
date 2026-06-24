@@ -51,7 +51,7 @@ enum class SwitchType(
 /**
  * 机械键盘声音引擎
  *
- * 支持青轴、红轴、茶轴三种轴体音效以及 ASMR 增强模式和环境雨声。
+ * 支持青轴、红轴、茶轴三种声音主题，以及可复用的环境雨声能力。
  * 所有音效通过正弦波合成生成，使用 AudioTrack (MODE_STATIC / MODE_STREAM) 播放。
  */
 class SoundEngine {
@@ -68,7 +68,6 @@ class SoundEngine {
         .build()
 
     private val tracks = mutableMapOf<SwitchType, AudioTrack>()
-    private var asmrTrack: AudioTrack? = null
 
     /**
      * 后台预热：提前创建最常用的 AudioTrack，避免首次点击卡顿
@@ -77,7 +76,6 @@ class SoundEngine {
     fun warmUp(defaultType: SwitchType = SwitchType.BLUE) {
         Thread({
             try { getTrack(defaultType) } catch (e: Exception) { Log.w("SoundEngine", "warmUp track failed", e) }
-            try { getAsmrTrack() } catch (e: Exception) { Log.w("SoundEngine", "warmUp ASMR failed", e) }
         }, "audio-warmup").apply { isDaemon = true; start() }
     }
 
@@ -86,14 +84,6 @@ class SoundEngine {
         tracks[type]?.let { return it }
         return try {
             buildStaticTrack(type).also { tracks[type] = it }
-        } catch (_: Exception) { null }
-    }
-
-    @Synchronized
-    private fun getAsmrTrack(): AudioTrack? {
-        asmrTrack?.let { return it }
-        return try {
-            buildAsmrTrack().also { asmrTrack = it }
         } catch (_: Exception) { null }
     }
 
@@ -120,14 +110,6 @@ class SoundEngine {
     @Synchronized
     fun playClick(type: SwitchType) {
         val track = getTrack(type) ?: return
-        try { track.stop() } catch (_: IllegalStateException) { }
-        track.reloadStaticData()
-        track.play()
-    }
-
-    @Synchronized
-    fun playAsmrClick() {
-        val track = getAsmrTrack() ?: return
         try { track.stop() } catch (_: IllegalStateException) { }
         track.reloadStaticData()
         track.play()
@@ -224,11 +206,6 @@ class SoundEngine {
             track.release()
         }
         tracks.clear()
-        asmrTrack?.let {
-            try { it.stop() } catch (_: IllegalStateException) { }
-            it.release()
-        }
-        asmrTrack = null
     }
 
     // =====================================================================
@@ -292,84 +269,4 @@ class SoundEngine {
         return samples
     }
 
-    /**
-     * 构建 ASMR 增强点击轨道
-     *
-     * 在青轴频率基础上：
-     * - 添加 3 份延迟副本（20ms / 50ms / 80ms），振幅递减
-     * - 添加 100Hz 低频隆隆声 (振幅 0.05)
-     * - 添加 12000Hz 高频空气感 (振幅 0.03)
-     * - 总时长 60ms
-     */
-    private fun buildAsmrTrack(): AudioTrack {
-        val baseType = SwitchType.BLUE
-        val totalDurationMs = 60
-        val numSamples = (SAMPLE_RATE * totalDurationMs / 1000.0).toInt()
-        val samples = ShortArray(numSamples)
-
-        // 延迟时间点 (ms) 与对应振幅缩放因子
-        val delays = intArrayOf(20, 50, 80)
-        val delayAmps = doubleArrayOf(0.6, 0.4, 0.2)
-
-        for (i in 0 until numSamples) {
-            val t = i.toDouble() / SAMPLE_RATE           // 真实时间（秒）
-            var value = 0.0
-
-            // --- 主音：青轴包络 (1 - env)^4 ---
-            val mainDurationSec = baseType.durationMs / 1000.0
-            if (t <= mainDurationSec) {
-                val tNorm = t / mainDurationSec          // 0~1
-                val env = (1.0 - tNorm).pow(baseType.envelopeExp)
-                for (j in baseType.freqs.indices) {
-                    value += baseType.amps[j] * sin(2.0 * Math.PI * baseType.freqs[j] * t) * env
-                }
-            }
-
-            // --- 三份延迟副本，振幅递减 ---
-            for (d in delays.indices) {
-                val delaySec = delays[d] / 1000.0
-                val tDelayed = t - delaySec
-                if (tDelayed in 0.0..mainDurationSec) {
-                    val tNorm = tDelayed / mainDurationSec
-                    val env = (1.0 - tNorm).pow(baseType.envelopeExp)
-                    for (j in baseType.freqs.indices) {
-                        value += baseType.amps[j] * delayAmps[d] * sin(2.0 * Math.PI * baseType.freqs[j] * tDelayed) * env
-                    }
-                }
-            }
-
-            // --- 100Hz 低频隆隆声（振幅 0.05）---
-            value += 0.05 * sin(2.0 * Math.PI * 100.0 * t)
-
-            // --- 12000Hz 高频空气感（振幅 0.03）---
-            value += 0.03 * sin(2.0 * Math.PI * 12000.0 * t)
-
-            // 全局柔和包络：尾部淡出
-            val fadeStart = totalDurationMs * 0.6 / 1000.0
-            if (t > fadeStart) {
-                val fade = 1.0 - ((t - fadeStart) / (totalDurationMs / 1000.0 - fadeStart))
-                value *= fade.coerceIn(0.0, 1.0)
-            }
-
-            value = value.coerceIn(-1.0, 1.0)
-            samples[i] = (value * Short.MAX_VALUE).toInt().toShort()
-        }
-
-        val bufferSize = samples.size * 2
-        val track = AudioTrack.Builder()
-            .setAudioAttributes(gameAttributes)
-            .setAudioFormat(
-                AudioFormat.Builder()
-                    .setSampleRate(SAMPLE_RATE)
-                    .setChannelMask(CHANNEL_CONFIG)
-                    .setEncoding(AUDIO_FORMAT)
-                    .build()
-            )
-            .setBufferSizeInBytes(bufferSize)
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .build()
-
-        track.write(samples, 0, samples.size)
-        return track
-    }
 }

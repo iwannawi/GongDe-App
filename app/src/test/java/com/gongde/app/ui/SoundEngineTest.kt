@@ -105,13 +105,6 @@ class SoundEngineTest {
     }
 
     @Test
-    fun `SoundEngine 对 ASMR 模式安全处理`() {
-        val engine = SoundEngine()
-        engine.playAsmrClick()
-        engine.release()
-    }
-
-    @Test
     fun `SoundEngine 雨声生命周期正确`() {
         val engine = SoundEngine()
         engine.playRain()

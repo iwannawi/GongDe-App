@@ -12,7 +12,7 @@ class MechanicalButtonTest {
 
     @Test
     fun keycapTopPlane_acceptsPointInsideTopSurface() {
-        assertTrue(isInsideKeycapTopPlane(Offset(110f, 65f), buttonSize, imageSize))
+        assertTrue(isInsideKeycapTopPlane(Offset(112f, 96f), buttonSize, imageSize))
     }
 
     @Test
