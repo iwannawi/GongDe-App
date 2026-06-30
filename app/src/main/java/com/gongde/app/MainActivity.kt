@@ -19,6 +19,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,13 +29,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RestartAlt
-import androidx.compose.material.icons.rounded.Workspaces
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -44,12 +41,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongde.app.R
@@ -81,21 +82,29 @@ class MainActivity : ComponentActivity() {
 
 private data class NavItem(
     val label: String,
-    val icon: ImageVector,
+    val iconRes: Int,
     val route: String
 )
 
 private val NAV_ITEMS = listOf(
-    NavItem("解压", Icons.Rounded.Workspaces, Screen.Home.route),
-    NavItem("图鉴", Icons.Rounded.Inventory2, Screen.Collection.route),
-    NavItem("记录", Icons.Rounded.BarChart, Screen.Records.route),
-    NavItem("设置", Icons.Outlined.Settings, Screen.Settings.route)
+    NavItem("解压", R.drawable.concept_nav_home_mask, Screen.Home.route),
+    NavItem("图鉴", R.drawable.concept_nav_cube_mask, Screen.Collection.route),
+    NavItem("记录", R.drawable.concept_nav_bars_mask, Screen.Records.route),
+    NavItem("设置", R.drawable.concept_nav_gear_mask, Screen.Settings.route)
 )
 
 private data class EmotionCard(
     val title: String,
     val prompt: String,
     val event: String
+)
+
+private data class KeycapGalleryItem(
+    val title: String,
+    val subtitle: String,
+    val asset: Int,
+    val status: String,
+    val unlocked: Boolean
 )
 
 private val EMOTION_CARDS = listOf(
@@ -159,13 +168,17 @@ fun GongDeApp(vm: GongDeViewModel) {
                             selected = selected,
                             onClick = { currentRoute = item.route },
                             icon = {
-                                Icon(
-                                    item.icon,
+                                Image(
+                                    painter = painterResource(item.iconRes),
                                     contentDescription = item.label,
-                                    modifier = Modifier.size(28.dp)
+                                    colorFilter = ColorFilter.tint(if (selected) colors.accent else colors.unselected),
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .semantics { contentDescription = item.label }
                                 )
                             },
-                            label = { Text(item.label) },
+                            label = { Text(item.label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = colors.accent,
                                 selectedTextColor = colors.accent,
@@ -289,18 +302,18 @@ fun HomeScreen(
             .fillMaxSize()
             .padding(horizontal = 24.dp)
     ) {
-        val compactHeight = maxHeight < 720.dp
-        val veryCompactHeight = maxHeight < 620.dp
+        val compactHeight = maxHeight < 900.dp
+        val veryCompactHeight = maxHeight < 700.dp
         val keySize = minOf(
-            maxWidth * if (compactHeight) 0.46f else 0.52f,
+            maxWidth * if (compactHeight) 0.38f else 0.44f,
             when {
-                veryCompactHeight -> 156.dp
-                compactHeight -> 176.dp
-                else -> 200.dp
+                veryCompactHeight -> 132.dp
+                compactHeight -> 150.dp
+                else -> 172.dp
             }
         )
         val hintSize = if (veryCompactHeight) 14.sp else 16.sp
-        val sectionGap = if (veryCompactHeight) 8.dp else 10.dp
+        val sectionGap = if (veryCompactHeight) 6.dp else 7.dp
 
         Column(
             modifier = Modifier
@@ -328,7 +341,7 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(keySize * 1.05f),
+                    .height(keySize * 0.98f),
                 contentAlignment = Alignment.Center
             ) {
 
@@ -363,6 +376,10 @@ fun HomeScreen(
                 fontSize = hintSize,
                 fontWeight = FontWeight.Medium
             )
+            HandHintIcon(
+                modifier = Modifier.size(if (compactHeight) 20.dp else 24.dp),
+                color = colors.textMuted
+            )
             EmotionTicketCard(
                 emotionCard = emotionCard,
                 enabled = !roundRunning,
@@ -382,10 +399,12 @@ fun HomeScreen(
                     running = roundRunning,
                     remainingSeconds = remainingSeconds,
                     onClick = { startRound() },
+                    compact = compactHeight,
                     modifier = Modifier.weight(1f)
                 )
                 RewardCard(
                     completed = state.dailyGoalCompleted,
+                    compact = compactHeight,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -433,7 +452,7 @@ private fun ConceptBackground(bgColors: List<Color>) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(Color.White.copy(alpha = 0.46f), size.width * 0.46f, Offset(size.width * 0.12f, size.height * 0.08f))
             drawCircle(Color(0x1A8D9AA6), size.width * 0.42f, Offset(size.width * 0.92f, size.height * 0.88f))
-            drawCircle(Color(0x10D83A31), size.width * 0.22f, Offset(size.width * 0.62f, size.height * 0.45f))
+            drawCircle(Color(0x128FA0AA), size.width * 0.2f, Offset(size.width * 0.64f, size.height * 0.46f))
             repeat(7) { index ->
                 val y = size.height * (0.16f + index * 0.105f)
                 drawLine(
@@ -444,6 +463,29 @@ private fun ConceptBackground(bgColors: List<Color>) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun HandHintIcon(
+    modifier: Modifier = Modifier,
+    color: Color
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        drawLine(color, Offset(w * 0.46f, h * 0.18f), Offset(w * 0.46f, h * 0.66f), stroke.width, StrokeCap.Round)
+        drawLine(color, Offset(w * 0.58f, h * 0.32f), Offset(w * 0.58f, h * 0.67f), stroke.width, StrokeCap.Round)
+        drawLine(color, Offset(w * 0.69f, h * 0.42f), Offset(w * 0.69f, h * 0.7f), stroke.width, StrokeCap.Round)
+        drawLine(color, Offset(w * 0.34f, h * 0.48f), Offset(w * 0.46f, h * 0.64f), stroke.width, StrokeCap.Round)
+        val palm = Path().apply {
+            moveTo(w * 0.34f, h * 0.48f)
+            quadraticTo(w * 0.18f, h * 0.52f, w * 0.28f, h * 0.72f)
+            quadraticTo(w * 0.38f, h * 0.9f, w * 0.61f, h * 0.88f)
+            quadraticTo(w * 0.78f, h * 0.86f, w * 0.74f, h * 0.68f)
+        }
+        drawPath(palm, color, style = stroke)
     }
 }
 
@@ -490,19 +532,17 @@ private fun TaskProgressCard(
             Spacer(Modifier.width(10.dp))
             Text("今日解压任务", color = colors.textPrimary, fontSize = titleSize, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
-            if (!compact) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(18.dp))
-                        .border(1.dp, colors.cardBorder, RoundedCornerShape(18.dp))
-                        .background(Color.White.copy(alpha = 0.52f))
-                        .padding(horizontal = 9.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Rounded.CalendarToday, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("每日 0 点重置", color = colors.textSecondary, fontSize = 12.sp)
-                }
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .border(1.dp, colors.cardBorder, RoundedCornerShape(18.dp))
+                    .background(Color.White.copy(alpha = 0.52f))
+                    .padding(horizontal = if (compact) 8.dp else 9.dp, vertical = if (compact) 4.dp else 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Rounded.CalendarToday, contentDescription = null, tint = colors.textMuted, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("每日 0 点重置", color = colors.textSecondary, fontSize = 12.sp)
             }
         }
         Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
@@ -540,13 +580,11 @@ private fun TaskProgressCard(
             trackColor = colors.barTrack.copy(alpha = 0.55f),
             drawStopIndicator = {}
         )
-        if (!compact) {
-            Spacer(Modifier.height(4.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("0", color = colors.textMuted, fontSize = 12.sp)
-                Text("50", color = colors.textMuted, fontSize = 12.sp)
-                Text(todayGoal.toString(), color = colors.textMuted, fontSize = 12.sp)
-            }
+        Spacer(Modifier.height(if (compact) 2.dp else 4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("0", color = colors.textMuted, fontSize = 12.sp)
+            Text("50", color = colors.textMuted, fontSize = 12.sp)
+            Text(todayGoal.toString(), color = colors.textMuted, fontSize = 12.sp)
         }
     }
 }
@@ -556,18 +594,18 @@ private fun RewardIcon(completed: Boolean, modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(R.drawable.concept_gift_icon),
         contentDescription = null,
-        modifier = modifier.size(72.dp),
+        modifier = modifier,
         contentScale = ContentScale.Fit
     )
 }
 @Composable
 private fun PressureCard(progress: Float, roundPressure: Int, compact: Boolean, modifier: Modifier = Modifier) {
     val colors = GongDeThemeExt.colors
-    ConceptCard(modifier.height(if (compact) 108.dp else 120.dp), compact = compact) {
+    ConceptCard(modifier.height(if (compact) 116.dp else 120.dp), compact = compact) {
         Text("压力槽", color = colors.textPrimary, fontSize = if (compact) 18.sp else 19.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(if (compact) 1.dp else 3.dp))
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.size(if (compact) 76.dp else 84.dp)) {
+            Canvas(Modifier.size(if (compact) 72.dp else 84.dp)) {
                 drawArc(
                     color = colors.barTrack.copy(alpha = 0.7f),
                     startAngle = 160f,
@@ -584,34 +622,40 @@ private fun PressureCard(progress: Float, roundPressure: Int, compact: Boolean, 
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("${(progress * 100).toInt()}%", color = colors.accent, fontSize = if (compact) 24.sp else 26.sp, fontWeight = FontWeight.Bold)
+                Text("${(progress * 100).toInt()}%", color = colors.accent, fontSize = if (compact) 23.sp else 26.sp, fontWeight = FontWeight.Bold)
                 Text(if (roundPressure < 40) "中等压力" else "高压释放", color = colors.textMuted, fontSize = 12.sp)
             }
         }
-        if (!compact) Text("点击释放压力吧", color = colors.textMuted, fontSize = 13.sp)
+        Text("点击释放压力吧", color = colors.textMuted, fontSize = if (compact) 12.sp else 13.sp)
     }
 }
 
 @Composable
 private fun ComboCard(combo: Int, bestCombo: Int, compact: Boolean, modifier: Modifier = Modifier) {
     val colors = GongDeThemeExt.colors
-    ConceptCard(modifier.height(if (compact) 108.dp else 120.dp), compact = compact) {
+    ConceptCard(modifier.height(if (compact) 116.dp else 120.dp), compact = compact) {
         Text("连击", color = colors.textPrimary, fontSize = if (compact) 18.sp else 19.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(if (compact) 4.dp else 6.dp))
+        Spacer(Modifier.height(if (compact) 2.dp else 6.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(combo.toString(), color = colors.textPrimary, fontSize = if (compact) 36.sp else 42.sp, fontWeight = FontWeight.Bold, lineHeight = 42.sp)
+            Text(
+                combo.toString(),
+                color = colors.textPrimary,
+                fontSize = if (compact) 34.sp else 42.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = if (compact) 34.sp else 42.sp
+            )
             Spacer(Modifier.width(8.dp))
             Text("连击", color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.weight(1f))
-            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = colors.accent, modifier = Modifier.size(23.dp))
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = colors.accent, modifier = Modifier.size(if (compact) 21.dp else 23.dp))
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(if (compact) 4.dp else 0.dp).weight(1f))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
                 .background(colors.barTrack.copy(alpha = 0.46f))
-                .padding(vertical = 5.dp),
+                .padding(vertical = if (compact) 4.dp else 5.dp),
             contentAlignment = Alignment.Center
         ) {
             Text("最高 $bestCombo 连击", color = colors.textMuted, fontSize = 13.sp)
@@ -658,54 +702,70 @@ private fun ChallengeCard(
     running: Boolean,
     remainingSeconds: Int,
     onClick: () -> Unit,
+    compact: Boolean,
     modifier: Modifier = Modifier
 ) {
     val colors = GongDeThemeExt.colors
-    ConceptCard(modifier.height(94.dp)) {
+    ConceptCard(modifier.height(if (compact) 84.dp else 94.dp), compact = compact) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("开始一轮", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(3.dp))
+                Text("开始一轮", color = colors.textPrimary, fontSize = if (compact) 17.sp else 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(if (compact) 2.dp else 3.dp))
                 Text(if (running) "剩余 ${remainingSeconds}s" else "30 秒点击挑战", color = colors.textSecondary, fontSize = 13.sp, maxLines = 1)
-                Spacer(Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = onClick,
-                    shape = RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(horizontal = 9.dp, vertical = 3.dp),
-                    modifier = Modifier.height(30.dp)
+                Spacer(Modifier.height(if (compact) 3.dp else 4.dp))
+                Row(
+                    modifier = Modifier
+                        .height(if (compact) 28.dp else 30.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .border(1.dp, colors.cardBorder, RoundedCornerShape(18.dp))
+                        .background(Color.White.copy(alpha = 0.58f))
+                        .clickable(onClick = onClick)
+                        .padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(if (running) Icons.Rounded.RestartAlt else Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Icon(
+                        if (running) Icons.Rounded.RestartAlt else Icons.Rounded.PlayArrow,
+                        contentDescription = null,
+                        tint = colors.accent,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(Modifier.width(5.dp))
-                    Text(if (running) "重新开始" else "开始挑战", fontSize = 12.sp)
+                    Text(
+                        if (running) "重新开始" else "开始挑战",
+                        color = colors.accent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 12.sp
+                    )
                 }
             }
             Image(
                 painter = painterResource(R.drawable.concept_clock_icon),
                 contentDescription = null,
-                modifier = Modifier.size(58.dp),
+                modifier = Modifier.size(if (compact) 50.dp else 58.dp),
                 contentScale = ContentScale.Fit
             )
         }
     }
 }
 @Composable
-private fun RewardCard(completed: Boolean, modifier: Modifier = Modifier) {
+private fun RewardCard(completed: Boolean, compact: Boolean, modifier: Modifier = Modifier) {
     val colors = GongDeThemeExt.colors
-    ConceptCard(modifier.height(94.dp)) {
+    ConceptCard(modifier.height(if (compact) 84.dp else 94.dp), compact = compact) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("今日奖励", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("今日奖励", color = colors.textPrimary, fontSize = if (compact) 17.sp else 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(6.dp))
                     Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFD83A31)))
                 }
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(if (compact) 4.dp else 6.dp))
                 Text(if (completed) "红晶碎片 x 20" else "完成任务可领取", color = colors.textSecondary, fontSize = 13.sp)
             }
             Image(
                 painter = painterResource(R.drawable.concept_chest_icon),
                 contentDescription = null,
-                modifier = Modifier.size(62.dp),
+                modifier = Modifier.size(if (compact) 52.dp else 62.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -715,7 +775,7 @@ private fun RewardCard(completed: Boolean, modifier: Modifier = Modifier) {
 private fun KeycapCollectionPreview(totalCount: Int, dailyRewardCompleted: Boolean) {
     val colors = GongDeThemeExt.colors
     val assets = listOf(
-        R.drawable.concept_collection_red_key,
+        R.drawable.concept_key_transparent,
         R.drawable.concept_collection_clear_switch,
         R.drawable.concept_collection_panda_key,
         R.drawable.concept_collection_black_key,
@@ -726,21 +786,14 @@ private fun KeycapCollectionPreview(totalCount: Int, dailyRewardCompleted: Boole
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("键帽收藏", color = colors.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
-            Text("${(totalCount / 40).coerceAtMost(12)} / 36", color = colors.textMuted, fontSize = 13.sp)
+            Text("${(totalCount / 40).coerceAtMost(12).coerceAtLeast(1)} / 36", color = colors.textMuted, fontSize = 13.sp)
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
             assets.forEachIndexed { index, resId ->
                 Box(
                     Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (index == 0) colors.accent.copy(alpha = 0.08f) else Color.Transparent)
-                        .border(
-                            1.5.dp,
-                            if (index == 0) colors.accent else Color.Transparent,
-                            RoundedCornerShape(12.dp)
-                        ),
+                        .size(44.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -815,37 +868,72 @@ fun RecordsScreen(vm: GongDeViewModel) {
 fun CollectionScreen(vm: GongDeViewModel) {
     val state = vm.uiState
     val colors = GongDeThemeExt.colors
-    val emotionCards = remember {
-        listOf(
-            "会议后遗症" to "今天适合把压力敲碎一点",
-            "作业堆叠" to "先敲一轮，再继续写",
-            "通勤暴击" to "把路上的烦躁留在键帽上"
-        )
-    }
+    val unlockedCount = (state.totalCount / 40).coerceAtMost(12).coerceAtLeast(1)
+    val keycaps = listOf(
+        KeycapGalleryItem("红色本命", "概念图同款透明红键帽", R.drawable.concept_key_transparent, "已拥有", true),
+        KeycapGalleryItem(
+            "清透轴体",
+            "完成 20 次连击后点亮",
+            R.drawable.concept_collection_clear_switch,
+            "${(state.totalCount / 50).coerceAtMost(20)} / 20",
+            state.totalCount >= 1000
+        ),
+        KeycapGalleryItem("松弛熊猫", "连续使用解锁", R.drawable.concept_collection_panda_key, "进行中", state.streak >= 3),
+        KeycapGalleryItem("夜间黑键", "高连击挑战奖励", R.drawable.concept_collection_black_key, "未解锁", state.bestComboAllTime >= 60),
+        KeycapGalleryItem(
+            "今日贴纸",
+            "完成今日任务后解锁",
+            R.drawable.concept_collection_pink_key,
+            if (state.dailyGoalCompleted) "已解锁" else "未解锁",
+            state.dailyGoalCompleted
+        ),
+        KeycapGalleryItem("隐藏键帽", "后续奖励保留位", R.drawable.concept_collection_lock_key, "锁定", false)
+    )
+    val emotionCards = listOf(
+        Triple("会议后遗症", "今天适合把压力敲碎一点", true),
+        Triple("作业堆叠", "先敲一轮，再继续写", state.totalCount >= 30),
+        Triple("通勤暴击", "把路上的烦躁留在键帽上", state.totalCount >= 60)
+    )
 
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionHeading("情绪签图鉴")
-            emotionCards.forEachIndexed { index, card ->
-                CollectionRow(
-                    title = card.first,
-                    subtitle = card.second,
-                    value = if (index == 0) "已解锁" else "进行中"
-                )
-            }
+            SectionHeading("键帽图鉴")
+            KeycapGallerySummary(
+                totalCount = state.totalCount,
+                unlockedCount = unlockedCount,
+                dailyRewardCompleted = state.dailyGoalCompleted
+            )
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionHeading("键帽收藏")
-            CollectionRow("红色本命键帽", "概念图同款透明红键帽", "已拥有")
-            CollectionRow("青轴碎片", "通过连击和每日奖励获得", "${(state.totalCount / 50).coerceAtMost(20)} / 20")
-            CollectionRow("今日限定贴纸", "完成今日解压任务后解锁", if (state.dailyGoalCompleted) "已解锁" else "未解锁")
+            keycaps.chunked(2).forEach { rowItems ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    rowItems.forEach { item ->
+                        KeycapTile(item = item, modifier = Modifier.weight(1f))
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeading("情绪签收藏")
+            emotionCards.forEach { card ->
+                EmotionCollectionCard(
+                    title = card.first,
+                    subtitle = card.second,
+                    unlocked = card.third
+                )
+            }
         }
 
         AchievementScreen(
@@ -861,22 +949,108 @@ fun CollectionScreen(vm: GongDeViewModel) {
 }
 
 @Composable
-private fun CollectionRow(title: String, subtitle: String, value: String) {
+private fun KeycapGallerySummary(
+    totalCount: Int,
+    unlockedCount: Int,
+    dailyRewardCompleted: Boolean
+) {
+    val colors = GongDeThemeExt.colors
+    ConceptCard(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(R.drawable.concept_key_transparent),
+                contentDescription = null,
+                modifier = Modifier.size(74.dp),
+                contentScale = ContentScale.Inside
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text("红色本命键帽", color = colors.textPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(3.dp))
+                Text("累计点击和每日奖励会解锁更多键帽", color = colors.textSecondary, fontSize = 13.sp)
+                Spacer(Modifier.height(10.dp))
+                LinearProgressIndicator(
+                    progress = { (unlockedCount / 36f).coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    color = colors.accent,
+                    trackColor = colors.barTrack.copy(alpha = 0.55f),
+                    drawStopIndicator = {}
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                Text("$unlockedCount / 36", color = colors.accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(5.dp))
+                Text(if (dailyRewardCompleted) "今日已领取" else "今日待领取", color = colors.textMuted, fontSize = 12.sp)
+                Spacer(Modifier.height(5.dp))
+                Text("$totalCount 次", color = colors.textMuted, fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeycapTile(item: KeycapGalleryItem, modifier: Modifier = Modifier) {
+    val colors = GongDeThemeExt.colors
+    ConceptCard(modifier.height(158.dp), compact = true) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(78.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (item.unlocked) colors.accent.copy(alpha = 0.08f) else colors.barTrack.copy(alpha = 0.42f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(item.asset),
+                contentDescription = null,
+                modifier = Modifier.size(76.dp).graphicsLayer { alpha = if (item.unlocked) 1f else 0.62f },
+                contentScale = ContentScale.Inside
+            )
+        }
+        Spacer(Modifier.height(7.dp))
+        Text(item.title, color = colors.textPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Spacer(Modifier.height(2.dp))
+        Text(item.subtitle, color = colors.textMuted, fontSize = 11.sp, maxLines = 1)
+        Spacer(Modifier.weight(1f))
+        Text(
+            item.status,
+            color = if (item.unlocked) colors.accent else colors.textMuted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun EmotionCollectionCard(title: String, subtitle: String, unlocked: Boolean) {
     val colors = GongDeThemeExt.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colors.cardBg, RoundedCornerShape(8.dp))
-            .padding(14.dp),
+            .shadow(5.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x1015191D), spotColor = Color(0x1815191D))
+            .clip(RoundedCornerShape(18.dp))
+            .background(colors.cardBg)
+            .border(1.dp, Color.White.copy(alpha = 0.82f), RoundedCornerShape(18.dp))
+            .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Image(
+            painter = painterResource(R.drawable.concept_ticket_icon),
+            contentDescription = null,
+            modifier = Modifier.size(42.dp).graphicsLayer { alpha = if (unlocked) 1f else 0.48f },
+            contentScale = ContentScale.Fit
+        )
         Column(Modifier.weight(1f)) {
             Text(title, color = colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             Text(subtitle, color = colors.textMuted, fontSize = 13.sp)
         }
-        Text(value, color = colors.accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text(if (unlocked) "已解锁" else "进行中", color = colors.accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

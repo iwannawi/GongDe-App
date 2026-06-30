@@ -22,8 +22,8 @@ android {
         minSdk = 24
         targetSdk = 35
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 16
-        versionName = "2.6.0-rc1"
+        versionCode = 17
+        versionName = "2.6.0"
     }
 
     signingConfigs {
@@ -54,7 +54,7 @@ android {
         }
     }
 
-    // APK output name: GongDe-v2.5.0-20260623.apk
+    // APK output name: GongDe-v2.6.0-20260630.apk
     @Suppress("DEPRECATION")
     applicationVariants.configureEach {
         val verName = versionName ?: "unknown"

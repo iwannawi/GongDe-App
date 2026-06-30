@@ -1,6 +1,7 @@
 package com.gongde.app.analytics
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.FirebaseApp
@@ -21,6 +22,8 @@ enum class AnalyticsEvent(val eventName: String) {
 }
 
 class AppAnalyticsTracker(context: Context) : AnalyticsTracker {
+    private val debugLogging =
+        (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     private val analytics = if (FirebaseApp.getApps(context).isNotEmpty()) {
         FirebaseAnalytics.getInstance(context)
     } else {
@@ -30,7 +33,9 @@ class AppAnalyticsTracker(context: Context) : AnalyticsTracker {
     override fun track(event: AnalyticsEvent, parameters: Map<String, String>) {
         val firebase = analytics
         if (firebase == null) {
-            Log.d("Analytics", "${event.eventName}: $parameters")
+            if (debugLogging) {
+                Log.d("Analytics", "${event.eventName}: $parameters")
+            }
             return
         }
         val bundle = Bundle().apply {

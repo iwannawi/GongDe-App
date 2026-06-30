@@ -239,7 +239,7 @@ private fun ShareCardViewWithContent(
             val h = size.height
             drawCircle(Color.White.copy(alpha = 0.7f), w * 0.46f, Offset(w * 0.12f, h * 0.12f))
             drawCircle(Color(0x227C8792), w * 0.38f, Offset(w * 0.92f, h * 0.88f))
-            drawCircle(Color(0x22D83A31), w * 0.23f, Offset(w * 0.58f, h * 0.34f))
+            drawCircle(Color(0x168FA0AA), w * 0.2f, Offset(w * 0.58f, h * 0.34f))
             drawLine(
                 color = Color(0x1F15191D),
                 start = Offset(w * 0.2f, h * 0.76f),
